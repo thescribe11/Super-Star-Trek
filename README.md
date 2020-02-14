@@ -1,16 +1,16 @@
-##Super Star Trek
+# Super Star Trek
 
-#The History of Super Star Trek#
+## The History of Super Star Trek
 
 Created by proto-programmer and ubernerd Mike Mayfield in 1971 by feeding punch-card programs into the Sigma-7 computer, the original Star Trek game - later revised and retitled Super Star Trek, which really should have been the name of JJ Abrams' reboot movie - may have been embarrassingly basic by today's standards, but was amazing back in the day; amazing enough to have stayed alive for decades in the public domain, with other programmers adding and editing as they saw fit.
 
-#This version.#
+## This version
 
 The version in this repository is based upon the Tom Almy version of the game. 
 
 Besides being a Python 3.7 port (the Almy version is written in C), I have also made some changes of my own, such as changing the torpedoes so that they are targeted via user-inputted linear functions, as opposed to the oversimplified total X and Y displacements that the Almy version uses.
 
-#Running#
+## Running
 
 First, clone the repository to your computer.
 
