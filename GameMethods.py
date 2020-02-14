@@ -8,21 +8,41 @@ class MakeUniverse(object):
     klingons = random.randint(50, 80)
     starbases = random.randint(3, 5)
 
-    universe = [[0 for _ in range(10)] for _ in range(10)]
+    universe = [[[0,0,0] for _ in range(8)] for _ in range(8)]
 
     def __init__(self):
         self.make_stars()
         self.make_klingons()
         self.make_starbases()
+
+    def return_universe(self):
+        return self.universe
     
     def make_stars(self):
-        pass
+        for i in self.universe:
+            for j in i:
+                j[2] += random.randint(0, 7)
+        
+        return None
     
     def make_klingons(self):
-        pass
+        i = 0
+        while i < self.klingons:
+            quadrant_x = random.randint(0, 7)
+            quadrant_y = random.randint(0, 7)
+
+            if (self.universe[quadrant_x][quadrant_y][0]/100) < 10: # There can only be a maximum of 9 klingons in any given quadrant.
+                self.universe[quadrant_x][quadrant_y][0] += 100
+            else: # If there are too many klingons, find a different quadrant.
+                i -= 1
+            i += 1
 
     def make_starbases(self):
-        pass
+        i = 0
+        for i in range(self.starbases):
+            quadrant_x = random.randint(0, 7)
+            quadrant_y = random.randint(0, 7)
+            self.universe[quadrant_x][quadrant_y][1] += 10
 
 class Damage(object):
     life_support = None
@@ -113,5 +133,6 @@ class Enterprise(object):
     deutronium = 0
     damage = Damage()
 
-    def __init__ (self, location: list):
+    def __init__(self, location: dict):
+        self.location = location
         return None
