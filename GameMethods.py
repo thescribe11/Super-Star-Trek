@@ -4,6 +4,10 @@ class Torpedo(object):
     def __init__(self):
         return None
 
+def GetInput(prompt):
+    print(prompt)
+    return input("> ")
+
 class MakeUniverse(object):
     klingons = random.randint(50, 80)
     starbases = random.randint(3, 5)
@@ -44,7 +48,7 @@ class MakeUniverse(object):
             quadrant_y = random.randint(0, 7)
             self.universe[quadrant_x][quadrant_y][1] += 10
 
-class Damage(object):
+class _Damage(object):
     life_support = None
     damage_control = None
     sick_bay = None
@@ -131,8 +135,22 @@ class Enterprise(object):
     energy = 3000
     torps = 5
     deutronium = 0
-    damage = Damage()
+    destroyed = False
+    damage = _Damage()
 
-    def __init__(self, location: dict):
+    def __init__(self, location: dict, klingons_remaining: int):
+        self.klingons = klingons_remaining
         self.location = location
         return None
+
+    def get_location(self):
+        return self.location['quadrant']
+
+    def get_sector_location(self):
+        return self.location['sector']
+
+    def move(self, quadrant):
+        x_disp = int(GetInput("Input x-displacement (must be an integer)"))
+        init_y_disp = int(GetInput("Input y-diplacement (Again, must be an integer.)"))
+        y_disp = init_y_disp/x_disp #TODO: Use this for calcs, not init_y_disp
+        print(y_disp)
