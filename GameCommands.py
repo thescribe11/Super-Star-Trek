@@ -7,7 +7,9 @@ def srs(quadrant, ent_location, klingons:int):
     print(quadrant)
     i = 0
 
-    current_sector[ent_location[0]][ent_location[1]] = 'E'
+    current_sector[ent_location[1]][ent_location[0]] = 'E'
+    print("Ent. x: " + str(ent_location[0]))
+    print("Ent. y: " + str(ent_location[1]))
 
     while i < quadrant[0]/100:
         i += 1

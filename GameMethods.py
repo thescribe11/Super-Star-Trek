@@ -137,6 +137,7 @@ class Enterprise(object):
     deutronium = 0
     destroyed = False
     damage = _Damage()
+    need_rescan = False
 
     def __init__(self, location: dict, klingons_remaining: int):
         self.klingons = klingons_remaining
@@ -150,7 +151,14 @@ class Enterprise(object):
         return self.location['sector']
 
     def move(self, quadrant):
-        x_disp = int(GetInput("Input x-displacement (must be an integer)"))
-        init_y_disp = int(GetInput("Input y-diplacement (Again, must be an integer.)"))
-        y_disp = init_y_disp/x_disp #TODO: Use this for calcs, not init_y_disp
-        print(y_disp)
+        total_x_disp = int(GetInput("Input x-displacement (must be an integer)"))
+        init_y_disp = float(GetInput("Input y-diplacement (Again, must be an integer.)"))
+        y_disp = float(abs(init_y_disp / total_x_disp) if y_disp > 0 else -abs(init_y_disp / total_x_disp))
+        print("X-displacement: " + str(total_x_disp))
+        print("Y-displacement: " + str(y_disp))
+
+        
+
+
+
+        raise NotImplementedError()
