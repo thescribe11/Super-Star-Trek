@@ -47,12 +47,12 @@ Public functions:
     torpedoes = 8           # Remaining photon torpedoes
     is_alive = True         # Determines if the Enterprise still exists.
 
-    location = [               # Represents the Enterprise's current location
-        random.randint(0, 9),  # Sector x
-        random.randint(0, 9),  # Sector y
-        random.randint(0, 7),  # Quadrant x
-        random.randint(0, 7)   # Quadrant y
-    ]
+    location = {               # Represents the Enterprise's current location
+        'sx': random.randint(0, 9),  # Sector x
+        'sy': random.randint(0, 9),  # Sector y
+        'qx': random.randint(0, 7),  # Quadrant x
+        'qy': random.randint(0, 7)   # Quadrant y
+    }
     
     damage = {                    # Says which (if any) parts of the ship are damaged.
         "shields": False,      # Shield emitters
@@ -82,7 +82,7 @@ Public functions:
         super().__init__()
         # Put initialization code here if necessary.
         self.galaxy = galaxy
-        self.galaxy[self.location[3]][self.location[2]].EnterEnterprise(True)
+        self.galaxy[self.location['qy']][self.location['qx']].EnterEnterprise(True)
 
     def ChangeShieldEnergy(self):
         if self.damage['shields'] == False:  # Check to see if the shields are damaged.
@@ -137,7 +137,7 @@ Short-Range Sensors:         {self.repair_times['srsensors']}
 
     def SrScan(self):
         for i in range(10): # Iterate through the quadrant.
-            self.galaxy[self.location[3]][self.location[2]].SrPrintout(i)
+            self.galaxy[self.location['qy']][self.location['qx']].SrPrintout(i)
 
             if i == 0:
                 print(" >                Status                <")
@@ -150,7 +150,7 @@ Short-Range Sensors:         {self.repair_times['srsensors']}
             elif i == 4:
                 print(f" | Shields:   {('Down' if self.shield_status == False else 'Up')}, {self.shield_energy} energy remaining.")
             elif i == 6:  # Not a typo
-                print(f" | Location: Sector ({self.location[0]},{self.location[1]}) of quadrant ({self.location[2]},{self.location[3]})")
+                print(f" | Location: Sector ({self.location['sx']},{self.location['sy']}) of quadrant ({self.location['qx']},{self.location['qy']})")
             else:
                 print(" | ")
 
@@ -180,8 +180,8 @@ Short-Range Sensors:         {self.repair_times['srsensors']}
         else:
             x_disp = cin("X-displacement:", 'int')
             y_disp = cin("Y-displacement:", 'int')
-            x1 = self.location[0] + x_disp
-            y1 = self.location[1] + y_disp
+            x1 = self.location['sx'] + x_disp
+            y1 = self.location['sy'] + y_disp
             
 
 if __name__ == "__main__":
