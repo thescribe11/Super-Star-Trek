@@ -13,6 +13,11 @@ def cin(prompt: str, typer=str, / ):
     elif typer == 'float':
         return float(input(prompt + "\n> "))
 
+def Slope(x1: int, y1: int, x2: int, y2: int) -> float:
+    try:
+        return (float)(y2 - y1) / (x2 - x1)
+    except ZeroDivisionError:
+        return None  
 
 class Enterprise(object):
     '''
@@ -82,7 +87,7 @@ Public functions:
         super().__init__()
         # Put initialization code here if necessary.
         self.galaxy = galaxy
-        self.galaxy[self.location['qy']][self.location['qx']].EnterEnterprise(True)
+        self.galaxy[self.location['qy']][self.location['qx']].SetObject('E', self.location['sx'], self.location['sy'])
 
     def ChangeShieldEnergy(self):
         if self.damage['shields'] == False:  # Check to see if the shields are damaged.
@@ -136,53 +141,99 @@ Short-Range Sensors:         {self.repair_times['srsensors']}
         return None
 
     def SrScan(self):
-        for i in range(10): # Iterate through the quadrant.
+        print("┌─────────────────────────┐")
+        print("│    1 2 3 4 5 6 7 8 9 10 │")
+        for i in range(10):  # Iterate through the quadrant.
+            print("│ ", end="")
+            print(i + 1, end="")
+            if i < 9:
+                print("  ", end="")
+            else:
+                print(" ", end="")
+
             self.galaxy[self.location['qy']][self.location['qx']].SrPrintout(i)
 
+            # And this is when I wish that Python had switch-case statements...
             if i == 0:
-                print(" >                Status                <")
+                print(" │ >                Status                <")
             elif i == 1:
-                print(" ----------------------------------------")
+                print(" │ ----------------------------------------")
             elif i == 2:
-                print(f" | Energy:    {self.energy}")
+                print(f" │ Energy:    {self.energy}")
             elif i == 3:
-                print(f" | Torpedoes: {self.torpedoes}")
+                print(f" │ Torpedoes: {self.torpedoes}")
             elif i == 4:
-                print(f" | Shields:   {('Down' if self.shield_status == False else 'Up')}, {self.shield_energy} energy remaining.")
+                print(f" │ Shields:   {('Down' if self.shield_status == False else 'Up')}, {self.shield_energy} energy remaining.")
             elif i == 6:  # Not a typo
-                print(f" | Location: Sector ({self.location['sx']},{self.location['sy']}) of quadrant ({self.location['qx']},{self.location['qy']})")
+                print(f" │ Location: Sector ({self.location['sx']+1},{int(self.location['sy']+1)}) of quadrant ({self.location['qx']+1},{self.location['qy']+1})")
             else:
-                print(" | ")
+                print(" │ ")
+        print("└─────────────────────────┘")
 
     def LrScan(self):
         pass  # Complete this sometime else.
     
     def Move(self):
         movement_type = cin("Manuevering [0] or Long-Range [1]?", "int")
-        if -1 < movement_type < 2:
-            nav_type = cin("Would you like to use the Autopilot [0], or do you want to manually pilot the ship [1]?", 'int')
-            if not -1 < nav_type < 2:
-                print("Sir, that is not a valid method of navigation.")
-                return
-        elif movement_type >= 2:
+        if movement_type >= 2:
             print("I'm sorry sir, but the Enterprise is not equipped for intergalactic travel.")
-        else:
+        elif movement_type < 0:
             print("Sir, you aren't making any sense.")
         
-        if nav_type == 0:
-            unprocessed_destination = cin("Please input the destination coordinates.", 'str')
-            semiprocessed_destination = unprocessed_destination.split(' ')
-            destination = []
-            for i in semiprocessed_destination:
-                destination.append(int(i))
-            x1 = destination[0]
-            y1 = destination[1]
+        raw_displacement = cin("Please enter x and y displacement.", "str").split(' ')
+        semiprocessed_displacement = [i for i in raw_displacement if i != " "]
+        x_disp = int(semiprocessed_displacement[0])
+        y_disp = int(semiprocessed_displacement[1])
+        x2 = self.location['sx'] + x_disp
+        y2 = self.location['sy'] + y_disp
+
+        slope = Slope(self.location['sx'], self.location['sy'], x2, y2)
+        if slope is None:
+            slope = y_disp
+        if movement_type == 0:
+            self.Manuever(x_disp, slope)
         else:
-            x_disp = cin("X-displacement:", 'int')
-            y_disp = cin("Y-displacement:", 'int')
-            x1 = self.location['sx'] + x_disp
-            y1 = self.location['sy'] + y_disp
-            
+            self.InterQuadrantTravel()
+        return # TODO get the rest done.
+
+    def Manuever(self, xdisp: int, slope: float):
+        '''
+        In-quadrant moevement.
+        '''
+
+        if xdisp != 0: # To avoid wonkiness
+            for i in range(0, xdisp - (1 if xdisp > 1 else -1), (1 if xdisp > 1 else - 1)):
+                new_x = self.location['sx'] + (1 if xdisp > 1 else - 1)          # New x pos
+                new_y = self.location['sy'] + (slope if xdisp > 1 else (-slope)) # New y pos
+                if self.galaxy[self.location['qy']][self.location['qx']].CheckIsEmpty(new_x, new_y) == True: # Check to see if sector is uninhabited
+                    self.galaxy[self.location['qy']][self.location['qx']].SetObject('E', new_x, new_y)  # Update the quadrant
+                    self.galaxy[self.location['qy']][self.location['qx']].SetObject('.', self.location['sx'], self.location['sy'])
+                    self.location['sx'] = new_x; self.location['sy'] = new_y  # Change the Enterprise's location
+                else:
+                    self.EmergencyStop()
+                    break
+        else:
+            for i in  range(0, int(slope), (1 if int(slope) > 1 else - 1)):
+                new_y = self.location['sy'] + (1 if int(slope) > 1 else - 1)
+                if self.galaxy[self.location['qy']][self.location['qx']].CheckIsEmpty(self.location['sx'], new_y) == True:
+                    self.galaxy[self.location['qy']][self.location['qx']].SetObject('E', self.location['sx'], new_y)
+                    self.galaxy[self.location['qy']][self.location['qx']].SetObject('.', self.location['sx'], self.location['sy'])
+                    self.location['sy'] = new_y
+                else:
+                    self.EmergencyStop()
+                    break
+        return
+    
+    def EmergencyStop(self):
+        cost = random.randint(200, 350)
+        if self.energy > cost:
+            print("""**ALERT OBJECT DETECTED**\n**EMERGENCY STOP**\n\nEmergency stop costs {cost} energy.""")
+        else:
+            self.is_alive = False
+            self.GameOver()
+
+    def GameOver(self):
+        pass
 
 if __name__ == "__main__":
     from Quadrant import Quadrant
@@ -194,4 +245,5 @@ if __name__ == "__main__":
     test.GetDamage()
     test.SrScan()
     test.Move()
+    test.SrScan()
     print()

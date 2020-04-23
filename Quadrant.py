@@ -90,6 +90,16 @@ class Quadrant(object):
             for thing in self.contents[row]:
                 print(thing + " ", end="")
 
+    def CheckIsEmpty(self, x, y):
+        if self.contents[int(y)][x] == '.':
+            return True
+        else:
+            return False
+
+    def SetObject(self, objecter, x, y):
+        self.contents[int(y)][x] = objecter
+        
+
 if __name__ == "__main__":
     test = Quadrant()
     test.GetContents("klingons")
