@@ -1,7 +1,7 @@
 # Super Star Trek
 
-This project is currently under development; please don't download the code, it won't work. That being said, I do welcome contributions.
-To contribute, please submit a PR which accurately and fully describes your changes/additions. I will review it, and hopefully merge it :)
+This project is currently under development; it is not yet at a playable state.  
+Contributions are welcome; to contribute, please submit a PR which accurately and fully describes your changes/additions. I will review it, and hopefully merge it :)
 
 ## The History of Super Star Trek
 
@@ -15,12 +15,6 @@ Besides being a Python 3.7 port (the Almy version is written in C), I have also 
 
 ## Running
 
-First, clone the repository to your computer.
-
-Once you have done that,
-
 Executable: Double-click on "SuperStarTrek.exe".
 
-Command line: Provided that you have the code's directory on your PATH, type ```SuperStarTrek``` and press enter.
-
-Python code: In your terminal navigate to the source directory, and then enter ```python main.py```
+Python code: In your command line navigate to the source directory, and then enter ```python main.py```
