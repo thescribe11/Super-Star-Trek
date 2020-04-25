@@ -91,10 +91,13 @@ class Quadrant(object):
                 print(thing + " ", end="")
 
     def CheckIsEmpty(self, x, y):
-        if self.contents[int(y)][x] == '.':
-            return True
-        else:
-            return False
+        try:
+            if self.contents[int(y)][x] == '.':
+                return True
+            else:
+                return False
+        except IndexError:
+            return None
 
     def SetObject(self, objecter, x, y):
         self.contents[int(y)][x] = objecter

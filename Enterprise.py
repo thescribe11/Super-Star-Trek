@@ -174,7 +174,7 @@ Short-Range Sensors:         {self.repair_times['srsensors']}
         pass  # Complete this sometime else.
     
     def Move(self):
-        movement_type = cin("Manuevering [0] or Long-Range [1]?", "int")
+        movement_type = cin("Impulse [0] or Warp [1]?", "int")
         if movement_type >= 2:
             print("I'm sorry sir, but the Enterprise is not equipped for intergalactic travel.")
         elif movement_type < 0:
@@ -202,15 +202,25 @@ Short-Range Sensors:         {self.repair_times['srsensors']}
         '''
 
         if xdisp != 0: # To avoid wonkiness
-            for i in range(0, xdisp - (1 if xdisp > 1 else -1), (1 if xdisp > 1 else - 1)):
+            for i in range(0, xdisp, (1 if xdisp > 1 else - 1)):
                 new_x = self.location['sx'] + (1 if xdisp > 1 else - 1)          # New x pos
-                new_y = self.location['sy'] + (slope if xdisp > 1 else (-slope)) # New y pos
-                if self.galaxy[self.location['qy']][self.location['qx']].CheckIsEmpty(new_x, new_y) == True: # Check to see if sector is uninhabited
+                new_y = self.location['sy'] + (slope if xdisp > 1 else (-slope))  # New y pos
+                
+                if (new_y < 0) or (new_x < 0):
+                    print("I'm sorry sir, but we can't leave the quadrant on impulse drive.")
+                    break
+
+                if (emptiness := self.galaxy[self.location['qy']][self.location['qx']].CheckIsEmpty(new_x, new_y)) == True: # Check to see if sector is uninhabited
                     self.galaxy[self.location['qy']][self.location['qx']].SetObject('E', new_x, new_y)  # Update the quadrant
                     self.galaxy[self.location['qy']][self.location['qx']].SetObject('.', self.location['sx'], self.location['sy'])
                     self.location['sx'] = new_x; self.location['sy'] = new_y  # Change the Enterprise's location
-                else:
+
+                    self.energy -= (1 + abs(slope)) * (random.randint(5, 8))
+                elif emptiness == False:
                     self.EmergencyStop()
+                    break
+                else:
+                    print("I'm sorry sir, but we can't leave the quadrant on impulse drive.")
                     break
         else:
             for i in  range(0, int(slope), (1 if int(slope) > 1 else - 1)):
@@ -227,7 +237,7 @@ Short-Range Sensors:         {self.repair_times['srsensors']}
     def EmergencyStop(self):
         cost = random.randint(200, 350)
         if self.energy > cost:
-            print("""**ALERT OBJECT DETECTED**\n**EMERGENCY STOP**\n\nEmergency stop costs {cost} energy.""")
+            print(f"""**ALERT OBJECT DETECTED**\n**EMERGENCY STOP**\n\nEmergency stop costs {cost} energy.""")
         else:
             self.is_alive = False
             self.GameOver()
