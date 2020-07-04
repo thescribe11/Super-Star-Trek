@@ -9,12 +9,12 @@ Created by proto-programmer and ubernerd Mike Mayfield in 1971 by feeding punch-
 
 ## This version
 
-The version in this repository is based upon the Tom Almy version of the game. 
+The version in this repository is based upon the Tom Almy version of the game.
 
-Besides being a Python 3.7 port (the Almy version is written in C), I have also made some changes of my own, such as changing the torpedoes so that they are targeted via user-inputted linear functions, as opposed to the oversimplified total X and Y displacements that the Almy version uses.
+Besides being a Python 3.8 port (the Almy version is written in C), I have also made some changes of my own, such as changing the torpedoes so that they are targeted via user-inputted linear functions, as opposed to the oversimplified total X and Y displacements that the Almy version uses.
 
 ## Running
 
 Executable: Double-click on "SuperStarTrek.exe".
 
-Python code: In your command line navigate to the source directory, and then enter ```python main.py```
+Source code: In your command line navigate to the source directory, and then enter ```python main.py```
