@@ -31,7 +31,7 @@ def print_lrs(galaxy, visited, gvert: int, ghoriz: int, is_damaged: bool):
     for vert in range(10):
         print(f"%i{' ' if vert < 9 else ''} ┃ " % int(vert + 1), end="")
         for horiz in range(10):
-            if visited[vert][horiz] == True:
+            if visited[vert][horiz] == True and is_damaged == False:
                 print(
                     "{}{}{} ".format(
                         galaxy[vert][horiz][0],
@@ -40,6 +40,12 @@ def print_lrs(galaxy, visited, gvert: int, ghoriz: int, is_damaged: bool):
                     ),
                     end="",
                 )
+            elif (
+                is_damaged
+                and vert not in (gvert - 1, gvert, gvert + 1)
+                and horiz not in (ghoriz - 1, ghoriz, ghoriz + 1)
+            ):
+                print("??? ", end="")
             else:
                 print(
                     "... ", end="",

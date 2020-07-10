@@ -471,7 +471,8 @@ class Enterprise(object):
             return
 
         distance = 0
-        slope = 0
+        gslope = 0
+        sslope
         power = 0
         dgvert = 0
         dghoriz = 0
@@ -483,10 +484,15 @@ class Enterprise(object):
         shoriz_diff = 0
 
         if automatic:
-            destination: list = [
-                int(i) - 1
-                for i in input("Please input destination coordinates\n> ").split(" ")
-            ]
+            try:
+                destination: list = [
+                    int(i) - 1
+                    for i in input("Please input destination coordinates\n> ").split(
+                        " "
+                    )
+                ]
+            except:
+                print("[*COMPUTER*] *ERROR* COORDINATES INVALID.")
             if len(destination) == 2:
                 print("Destination length: 2")
                 for i in destination:
@@ -499,10 +505,10 @@ class Enterprise(object):
                 svert_diff = dsvert - self.svert
                 shoriz_diff = dshoriz - self.shoriz
                 if svert_diff != 0:
-                    slope = (self.shoriz - dshoriz) / (self.svert - dsvert)
+                    sslope = (self.shoriz - dshoriz) / (self.svert - dsvert)
                     distance = math.sqrt(svert_diff ** 2 + shoriz_diff ** 2)
                 else:
-                    slope = math.inf
+                    sslope = math.inf
                     distance = shoriz_diff
 
                 trip_time = 10 * distance / self.warp_speed
@@ -543,48 +549,11 @@ class Enterprise(object):
                 gvert_diff = dgvert - self.gvert
                 ghoriz_diff = dghoriz - self.ghoriz
 
-                if (gvert_diff * 10) + svert_diff != 0:
-                    slope = (
-                        (shoriz_diff + (ghoriz_diff * 10))
-                        - ((self.ghoriz * 10) + self.shoriz)
-                    ) / (
-                        (svert_diff + (gvert_diff * 10))
-                        - ((self.gvert * 10) + self.svert)
-                    )
-                    distance = math.sqrt(
-                        (svert_diff + (gvert_diff * 10)) ** 2
-                        + (shoriz_diff + (ghoriz_diff * 10)) ** 2
-                    )
-                else:
-                    slope = math.inf
-                    distance = shoriz_diff + (ghoriz_diff * 10)
-                trip_time = 10 * distance / self.warp_speed
-                power = (
-                    (distance + 0.05)
-                    * (self.warp_speed ** 3)
-                    * (1.5 if self.shield_stat else 1)
-                    / 10
-                )
+                return
+                """
+                TODO: Add code for determining the gslope, sslope, distance, and energy.
+                """
 
-                if power >= self.energy:
-                    print("[*ENGINEERING*] Scotty here. ", end="")
-                    iwarp = pow((self.energy / (distance + 0.05)), 0.333333333)
-                    if iwarp <= 0:
-                        print(
-                            "I'm sorry captain, but we canna do it! We have insufficient energy; there's nothing I can do about it."
-                        )
-                        return
-                    else:
-                        print(
-                            "We don't have enough energy, although we could do it at warp %.2f"
-                            % iwarp,
-                            end="",
-                        )
-                        if self.shield_stat:
-                            print(", if you'll lower the shields.")
-                        else:
-                            print(".")
-                    return
             else:
                 print("[*COMPUTER*] *ERROR* COORDINATES INVALID.")
 
@@ -594,110 +563,11 @@ class Enterprise(object):
         self.move(slope, gvert_diff, ghoriz_diff, svert_diff, shoriz_diff)
         self.energy -= power
 
-    def move(self, slope, gvert_diff, ghoriz_diff, svert_diff, shoriz_diff):
+    def move(self, gslope, sslope, gvert_diff, ghoriz_diff, svert_diff, shoriz_diff):
         self.sector[self.svert][self.shoriz] = "."
-        if gvert_diff == 0 and ghoriz_diff == 0:
-            print("Regular movement.")
-            if svert_diff > 0:
-                for i in range(svert_diff):
-                    new_vert = self.svert + 1
-                    new_horiz = self.shoriz + slope
-                    try:
-                        if self.sector[new_vert][round(new_horiz)] == ".":
-                            self.svert, self.shoriz = new_vert, round(new_horiz)
-                        else:
-                            self.emergency_stop(new_vert, new_horiz)
-                            break
-                    except IndexError:
-                        self.change_quadrant(randomize_pos=True)
-            elif svert_diff < 0:
-                for i in range(abs(svert_diff)):
-                    new_vert = self.svert - 1
-                    new_horiz = self.shoriz - slope
-                    try:
-                        if self.sector[new_vert][round(new_horiz)] == ".":
-                            self.svert, self.shoriz = new_vert, round(new_horiz)
-                    except IndexError:
-                        self.change_quadrant(randomize_pos=True)
-            else:
-                if shoriz_diff > 0:
-                    for i in range(shoriz_diff):
-                        new_horiz = self.shoriz + 1
-                        try:
-                            if self.sector[self.svert][new_horiz] == ".":
-                                self.shoriz = new_horiz
-                            else:
-                                self.emergency_stop(self.shoriz, new_horiz)
-                                break
-                        except IndexError:
-                            self.change_quadrant(randomize_pos=True)
-
-                elif shoriz_diff < 0:
-                    for i in range(abs(shoriz_diff)):
-                        new_horiz = self.shoriz - 1
-                        try:
-                            if self.sector[self.svert][new_horiz] == ".":
-                                self.shoriz = new_horiz
-                            else:
-                                self.emergency_stop(self.shoriz, new_horiz)
-                                break
-                        except IndexError:
-                            self.change_quadrant(randomize_pos=True)
-            self.sector[self.svert][self.shoriz] = "E"
-
-        else:
-            print("Extra-quadrant movement")
-            # TODO Use slope to get to edge of quadrant regularly, and then navigate to the next quadrant.
-            print(svert_diff)
-            if svert_diff > 0:
-                vdist_to_edge = 10 - self.svert
-                hdist_to_edge = 10 - self.shoriz
-                for i in range(
-                    20
-                ):  # 20 units should be more than enough to get reach the edge.
-                    print(i)
-                    new_vert = self.svert + 1
-                    new_horiz = self.shoriz + slope
-                    try:
-                        if self.sector[new_vert][round(new_horiz)] == ".":
-                            self.svert = new_vert
-                            self.shoriz = round(new_horiz)
-                            self.sector[self.svert][self.shoriz] = "E"
-                        else:
-                            self.emergency_stop(new_vert, round(new_horiz))
-                            return
-                    except IndexError:
-                        print("Done")
-                        break
-            elif svert_diff < 0:
-                for i in range(20):
-                    print(i)
-                    new_vert = self.svert - 1
-                    new_horiz = self.shoriz - slope
-                    try:
-                        if self.sector[new_vert][round(new_horiz)] == ".":
-                            self.svert = new_vert
-                            self.shoriz = round(new_horiz)
-                            self.sector[self.svert][self.shoriz] = "E"
-                        else:
-                            self.emergency_stop(new_vert, round(new_horiz))
-                    except IndexError:
-                        print("Done.")
-                        break
-            elif svert_diff == 0:
-                for i in range(20):
-                    print(i)
-                    new_horiz = self.shoriz + 1
-                    try:
-                        if self.sector[self.svert][new_horiz] == ".":
-                            self.shoriz = new_horiz
-                            self.sector[self.svert][self.shoriz] = "E"
-                        else:
-                            self.emergency_stop(self.vert, new_horiz)
-                    except IndexError:
-                        print("Done.")
-                        break
-
+        """
+        TODO: Add algorithm to first move the Enterprise within the current quadrant, and then do inter-quadrant movement if applicable.
+        """
         self.sector[self.svert][self.shoriz] = "E"
 
     def emergency_stop(self, vert, horiz):
@@ -1106,7 +976,7 @@ class Enterprise(object):
                         if decider == 0:
                             self.damage["Warp Drive"] += random.choice(possible_damages)
                             print(
-                                "[*DAMAGE CONTROL*] ***CRITICAL HIT--Subspace Radio damaged."
+                                "[*DAMAGE CONTROL*] ***CRITICAL HIT--Warp Drive damaged."
                             )
                         elif decider == 1:
                             self.damage["Shields"] += random.choice(possible_damages)
@@ -1170,9 +1040,7 @@ class Enterprise(object):
                     decider = random.randint(0, 10)
                     if decider == 0:
                         self.damage["Warp Drive"] += random.choice(possible_damages)
-                        print(
-                            "[*DAMAGE CONTROL*] ***CRITICAL HIT--Subspace Radio damaged."
-                        )
+                        print("[*DAMAGE CONTROL*] ***CRITICAL HIT--Warp Drive damaged.")
                     elif decider == 1:
                         self.damage["Shields"] += random.choice(possible_damages)
                         print(
