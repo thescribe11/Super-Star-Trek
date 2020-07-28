@@ -2,6 +2,7 @@ import random
 from sys import stdout
 from typing import Tuple
 from classes import Klingon
+import time
 
 
 def beginning_spiel() -> str:
@@ -20,12 +21,60 @@ def beginning_spiel() -> str:
 
 
 """
+## Sometimes it is beneficial to print slowly for dramatic effect.
+"""
+
+
+def type_fast(text):
+    for char in text:
+        stdout.write(char)
+        stdout.flush()
+        time.sleep(0.03)
+
+
+def type_slow(text):
+    for char in text:
+        stdout.write(char)
+        stdout.flush()
+        time.sleep(0.05)
+
+
+"""
 ## While seeing what's in your current quadrant is important, it is also important to be able to 
 ## see what's in the quadrants around you.
 """
 
 
-def print_lrs(galaxy, visited, gvert: int, ghoriz: int, is_damaged: bool):
+def print_lrscan(galaxy: list, gvert: int, ghoriz: int, damaged: bool):
+    print("Long-Range Scan for quadrant (%i, %i)" % (gvert + 1, ghoriz + 1))
+    print("┏━━━━━━━━━━━━━┓")
+    if damaged:
+        print("┃ ??? ??? ??? ┃")
+        print(
+            "┃ ??? %i%i%i ??? ┃"
+            % (
+                galaxy[gvert][ghoriz][0],
+                galaxy[gvert][ghoriz][1],
+                galaxy[gvert][ghoriz][2],
+            )
+        )
+        print("┃ ??? ??? ??? ┃")
+    else:
+        for vert in (gvert - 1, gvert, gvert + 1):
+            print("┃ ", end="")
+            for horiz in (ghoriz - 1, ghoriz, ghoriz + 1):
+                if -1 < gvert and 10 > gvert and -1 < ghoriz and 10 > ghoriz:
+                    print(
+                        f"{galaxy[vert][horiz][0]}{galaxy[vert][horiz][1]}{galaxy[vert][horiz][2]}",
+                        end=" ",
+                    )
+                else:
+                    print("-1 ", end=" ")
+            print("┃")
+    print("┗━━━━━━━━━━━━━┛")
+
+
+def print_starchart(galaxy, visited, gvert: int, ghoriz: int, is_damaged: bool):
     print("      1   2   3   4   5   6   7   8   9   10")
     print("   ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓")
     for vert in range(10):
@@ -213,18 +262,7 @@ def enter_quadrant(
     local_klingons_list = []
     placed = 0
 
-    sector = [
-        [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-        [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-        [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-        [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-        [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-        [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-        [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-        [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-        [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-        [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    ]
+    sector = [["." for i in range(10)] for i in range(10)]
 
     sector[svert][shoriz] = "E"
 
