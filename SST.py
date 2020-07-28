@@ -321,8 +321,8 @@ class Enterprise(object):
             y = random.randint(0, 9)
             global_starbases[y][x] = 1
 
-        for i in range(0, 9):
-            for j in range(0, 9):
+        for i in range(10):
+            for j in range(10):
                 self.galaxy[j][i][0] = global_klingons[j][i]
                 self.galaxy[j][i][1] = global_starbases[j][i]
                 self.galaxy[j][i][2] = global_stars[j][i]

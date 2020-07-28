@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "c:\\Users\\Adam\\Super-Star-Trek\\SuperStarTrek\\Scripts\\python.exe",
+    "python.pythonPath": "/usr/bin/python3",
     "python.formatting.provider": "black",
     "python.linting.mypyEnabled": true,
     "python.linting.enabled": true

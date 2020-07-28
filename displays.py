@@ -40,7 +40,7 @@ def type_slow(text):
 
 
 """
-## While seeing what's in your current quadrant is important, it is also important to be able to 
+## While seeing what's in your current quadrant is important, it is also important to 
 ## see what's in the quadrants around you.
 """
 
@@ -60,10 +60,10 @@ def print_lrscan(galaxy: list, gvert: int, ghoriz: int, damaged: bool):
         )
         print("┃ ??? ??? ??? ┃")
     else:
-        for vert in (gvert - 1, gvert, gvert + 1):
+        for vert in [gvert - 1, gvert, gvert + 1]:
             print("┃ ", end="")
             for horiz in (ghoriz - 1, ghoriz, ghoriz + 1):
-                if -1 < gvert and 10 > gvert and -1 < ghoriz and 10 > ghoriz:
+                if -1 < vert and 10 > vert and -1 < horiz and 10 > horiz:
                     print(
                         f"{galaxy[vert][horiz][0]}{galaxy[vert][horiz][1]}{galaxy[vert][horiz][2]}",
                         end=" ",
