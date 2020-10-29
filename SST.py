@@ -1,15 +1,19 @@
+#stdlib imports
 import math
 import random
 import time
 from typing import Final, Union
 
-import displays
+#user-defined modules.
+import displays # I should probably find a way to fold this into SST.py, but it's too much work.
 
 ## The date of the Treaty of Algeron.
 ## It forbids the Federation from using cloaking devices, so the Romulans
 ## will get annoyed if they catch the Enterprise using the one it stole from them.
 ALGERON: Final = 2311.0
 IDIDIT: bool = False  # Controls if the Romulans are antagonistic
+
+
 
 ## Controls whether debug features like print_debug() are active.
 DEBUG = True
@@ -19,79 +23,7 @@ TESTING_MOVEMENT = True
 ## As a result, my only choices were (a) put it here, or (b) initialize it
 ## every time I use it. The latter is inefficient, so I just decided to
 ## make a global variable.
-POSSIBLE_DAMAGES = [
-    0.5,
-    0.6,
-    0.7,
-    0.8,
-    0.9,
-    1,
-    1.1,
-    1.2,
-    1.3,
-    1.4,
-    1.5,
-    1.6,
-    1.7,
-    1.8,
-    1.9,
-    2,
-    2.1,
-    2.2,
-    2.3,
-    2.4,
-    2.5,
-    2.6,
-    2.7,
-    2.8,
-    2.9,
-    3,
-    3.1,
-    3.2,
-    3.3,
-    3.4,
-    3.5,
-    3.6,
-    3.7,
-    3.8,
-    3.9,
-    4,
-    4.1,
-    4.2,
-    4.3,
-    4.4,
-    4.5,
-    4.6,
-    4.7,
-    4.8,
-    4.9,
-    5,
-    5.1,
-    5.2,
-    5.3,
-    5.4,
-    5.5,
-    5.6,
-    5.7,
-    5.8,
-    5.9,
-    6,
-    6.1,
-    6.2,
-    6.3,
-    6.4,
-    6.5,
-    6.6,
-    6.7,
-    6.8,
-    6.9,
-    7,
-    7.1,
-    7.2,
-    7.3,
-    7.4,
-    7.6,
-]
+POSSIBLE_DAMAGES = [i/10 for i in range(50, 79)]
 
 
 def print_debug(string) -> None:
@@ -624,8 +556,6 @@ class Enterprise(object):
 
         direction = 1 if svert_diff > 0 else -1
 
-        print_debug(slope)
-
         old_svert: int = self.svert
         old_shoriz: int = self.shoriz
         old_gvert: int = self.gvert
@@ -638,8 +568,7 @@ class Enterprise(object):
             for i in range(abs(svert_diff)):
                 new_svert = old_svert + direction
                 new_shoriz = old_shoriz + slope
-                print_debug(new_svert)
-                print_debug(new_shoriz)
+                print(f'Iteration #{i}: {new_svert=}, {new_shoriz=}. *Current* galactic position: {old_gvert=}, {old_ghoriz=}')
 
                 leaving: dict = {'north': False, 'south': False, 'east': False, 'west': False}
 
@@ -679,6 +608,8 @@ class Enterprise(object):
                     if not self.enter_quadrant(new_gvert, new_ghoriz):
                         ## Unfortunately, the Enterprise wasn't able to leave the quadrant. As a result, get sector
                         ## coordinates back within normal values.
+                        print("*Enterprise failed to leave quadrant")
+
                         if leaving['north']:
                             new_svert = new_svert + 1
                         elif leaving['south']:
@@ -692,6 +623,8 @@ class Enterprise(object):
 
                     else:
                         ## The Enterprise has left the quadrant, and is now going on its merry way.
+                        print("*Enterprise has left the quadrant")
+
                         if leaving['north']:
                             new_svert = new_svert + 10
                         elif leaving['south']:
