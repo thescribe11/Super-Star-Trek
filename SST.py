@@ -34,7 +34,7 @@ def print_debug(string) -> None:
 class Enterprise(object):
     def __init__(self):
         super().__init__()
-        self.leave_attemps = 0
+        self.leave_attempts = 0
         self.energy = 3000
         self.shield_stat = False
         self.shields = 1500
@@ -593,8 +593,10 @@ class Enterprise(object):
                     leaving['east'] = True
 
                 if True in leaving.values():
-                    new_gvert: int
-                    new_ghoriz: int
+                    print(f'{leaving=}')
+
+                    new_gvert = old_gvert
+                    new_ghoriz = old_ghoriz
 
                     if leaving['north']:
                         new_gvert = old_gvert - 1
@@ -610,25 +612,20 @@ class Enterprise(object):
                         ## coordinates back within normal values.
                         print("*Enterprise failed to leave quadrant")
 
-                        if leaving['north']:
-                            new_svert = new_svert + 1
-                        elif leaving['south']:
-                            new_svert = new_svert - 1
+                        if leaving['north'] or leaving['south']:
+                            new_svert = old_svert
 
-                        if leaving['west']:
-                            new_shoriz = new_shoriz + 1
-                        elif leaving['east']:
-                            new_shoriz = new_shoriz - 1
+                        if leaving['west'] or leaving['east']:
+                            new_shoriz = old_shoriz
                         break
-
                     else:
                         ## The Enterprise has left the quadrant, and is now going on its merry way.
                         print("*Enterprise has left the quadrant")
 
                         if leaving['north']:
-                            new_svert = new_svert + 10
+                            new_svert = 9
                         elif leaving['south']:
-                            new_svert = new_svert - 10
+                            new_svert = 0
 
                         if leaving['west']:
                             new_shoriz = new_shoriz + 10
@@ -637,14 +634,17 @@ class Enterprise(object):
 
                         self.gvert = new_gvert
                         self.ghoriz = new_ghoriz
+                        old_gvert = new_gvert
+                        old_ghoriz = new_ghoriz
+
 
                 else:
                     x = self.check_movement_collision(new_svert, new_shoriz, old_svert)
                     if x[0]:
                         old_shoriz = x[1]
                         break
-                    old_svert = new_svert
-                    old_shoriz = new_shoriz
+                old_svert = new_svert
+                old_shoriz = new_shoriz
 
         self.svert = old_svert
         self.shoriz = round(old_shoriz)
