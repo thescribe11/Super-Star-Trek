@@ -14,6 +14,30 @@ ALGERON: Final = 2311.0
 IDIDIT: bool = False  # Controls if the Romulans are antagonistic
 
 
+class Upcoming:
+    '''
+    Buffer for user input.
+    '''
+
+    def __init__(self, *args, **kwargs):
+        self.upcoming_input = []
+
+    def get(self) -> str or None:
+        '''
+        Return the top element in the event stack
+        '''
+        try:
+            return self.upcoming_input.pop()
+        except IndexError:
+            return None
+
+    def add(self, incoming):
+        '''
+        Add an element to the stack
+        '''
+        assert isinstance(incoming, str)
+        self.upcoming_input.append(incoming)
+
 
 ## Controls whether debug features like print_debug() are active.
 DEBUG = True
