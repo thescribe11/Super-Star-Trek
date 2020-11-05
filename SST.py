@@ -1,11 +1,10 @@
 #stdlib imports
 import math
 import random
-import time
-from typing import Final, Union
+from typing import Final
 
-#user-defined modules.
-import displays # I should probably find a way to fold this into SST.py, but it's too much work.
+# user-defined modules.
+import displays  # I should probably find a way to fold this into SST.py, but it's too much work.
 
 ## The date of the Treaty of Algeron.
 ## It forbids the Federation from using cloaking devices, so the Romulans
@@ -574,9 +573,8 @@ class Enterprise(object):
         if not DEBUG:
             self.sector[self.svert][self.shoriz] = "."
 
-        slope = (
-            unprocessed_slope * (1 if svert_diff > 0 else -1)
-        )  # In other words, +slope if the Enterprise is moving vertically, otherwise -slope.
+        # In other words, +slope if the Enterprise is moving vertically, otherwise -slope.
+        slope = (unprocessed_slope * (1 if svert_diff > 0 else -1))
 
         direction = 1 if svert_diff > 0 else -1
 
@@ -588,7 +586,7 @@ class Enterprise(object):
         new_svert: int
         new_shoriz: int
 
-        if abs(slope) != math.inf:
+        if not math.isinf(slope): #Old code: "abs(slope) != math.inf". Which is better?
             for i in range(abs(svert_diff)):
                 new_svert = old_svert + direction
                 new_shoriz = old_shoriz + slope
@@ -663,11 +661,59 @@ class Enterprise(object):
 
 
                 else:
-                    x = self.check_movement_collision(new_svert, new_shoriz, old_svert)
+                    x = self.check_movement_collision(new_svert, new_shoriz, old_shoriz)
                     if x[0]:
                         old_shoriz = x[1]
                         break
                 old_svert = new_svert
+                old_shoriz = new_shoriz
+
+        else:
+            ## Horizontal movement
+            ## TODO: Figure out why this isn't being run.
+
+            direction: int = 1 if shoriz_diff > 0 else -1
+            leaving: dict = dict(east=False, west=False)
+            new_ghoriz: int = self.ghoriz
+            killer: bool = False
+
+            for i in range(abs(shoriz_diff)):
+                new_shoriz = old_shoriz + direction
+
+                print(f"*Iteration {i}: {new_shoriz=}")
+
+                if new_shoriz >= 10:
+                    leaving['east'] = True
+                    new_ghoriz = old_ghoriz + 1
+                elif new_shoriz < 0:
+                    leaving['west'] = True
+                    new_ghoriz = old_ghoriz - 1
+
+                if True in leaving.values():
+                    if not self.enter_quadrant(self.ghoriz, new_ghoriz):
+                        new_svert = old_svert
+                        killer = True
+                        print("**Enterprise failed to leave the quadrant!")
+                    else:
+                        print("*Enterprise has left the quadrant")
+
+                        if leaving['east']:
+                            new_shoriz = 0
+                        elif leaving['west']:
+                            new_shoriz = 9
+
+                        self.ghoriz = new_ghoriz
+                        old_ghoriz = new_ghoriz
+                else:
+                    x = self.check_h_movement_collision(new_shoriz, old_shoriz)
+                    if x[0]:
+                        print(f"{x[1]=}")
+                        old_shoriz = x[1]
+                        killer = True
+
+                if killer:
+                    # For some reason, the Enterprise has to abort the trip.
+                    break
                 old_shoriz = new_shoriz
 
         self.svert = old_svert
@@ -677,12 +723,24 @@ class Enterprise(object):
     def check_movement_collision(self, new_vert: int, new_horiz: float, old_horiz: float) -> (bool, float):
         """
         Check to see if the Enterprise has crashed into anything while moving.
+
+        TODO: Add logic.
         """
 
         int_new_horiz: int = math.floor(new_horiz)
         print_debug(self.sector[new_vert][int_new_horiz])
 
         return False, 0
+
+    def check_h_movement_collision(self, new_horiz, old_horiz) -> (bool, int):
+        """
+        Check to see if the Enterprise has crashed into anything while moving.
+
+        This is a horizontal variant of check_movement_collision().
+
+        TODO: Add logic.
+        """
+        return False, new_horiz # For now, just returning an "OK" response.
 
     def emergency_stop(self, vert, horiz):
         """
@@ -740,6 +798,7 @@ class Enterprise(object):
                 print("[*ARMORY*] Sir, that command does not make sense.")
                 return
             '''
+
 
         current_torp = 0
 

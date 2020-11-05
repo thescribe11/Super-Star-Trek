@@ -1,4 +1,5 @@
 from SST import Enterprise
+import math
 
 
 def test_enterprise() -> None:
@@ -101,6 +102,43 @@ def test_enterprise() -> None:
     assert ent.gvert == 6, '[**ERROR**]: Gvert test #4 has failed!'
     assert ent.ghoriz == 5, '[**ERROR**]: Ghoriz test #4 has failed!'
 
+    ##  CLEANUP  ##
+    ent.gvert = 5
+    ent.ghoriz = 5
+    ent.svert = 5
+    ent.shoriz = 5
+    ##  END CLEANUP  ##
+
+    print('\n** Begin movement check #5 (horizontal +):')
+    ent.impulse_move(math.inf, 0, 2)
+    assert ent.shoriz == 7, f'[**ERROR**]: Horizontal Shoriz test #1 failed! {ent.shoriz=}'
+    assert ent.svert == 5, '[**ERROR**]: Horizontal Svert test #1 failed!'
+
+    for i in ent.sector:
+        print(i)
+
+    ##  CLEANUP  ##
+    ent.gvert = 5
+    ent.ghoriz = 5
+    ent.svert = 5
+    ent.shoriz = 5
+    ##  END CLEANUP  ##
+
+    print('\n** Begin movement check #6 (horizontal -):')
+    ent.impulse_move(math.inf, 0, -4)
+    assert ent.shoriz == 1, '[**ERROR**]: Horizontal Shoriz test #2 failed!'
+
+    ##  CLEANUP  ##
+    ent.gvert = 5
+    ent.ghoriz = 5
+    ent.svert = 5
+    ent.shoriz = 5
+    ##  END CLEANUP  ##
+
+    print('\n** Begin movement check #7 (horizontal ++):')
+    ent.impulse_move(math.inf, 0, 20)
+    print(f"{ent.ghoriz=}")
+    assert ent.ghoriz == 7, "[**ERROR**]: Horizontal Shoriz test #3 failed!" # Well, I fixed the in-quadrant movement, but now inter-quadrant movement is having problems.
 
 if __name__ == '__main__':
     test_enterprise()
