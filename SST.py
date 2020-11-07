@@ -1,4 +1,4 @@
-#stdlib imports
+# stdlib imports
 import math
 import random
 from typing import Final
@@ -11,7 +11,6 @@ import displays  # I should probably find a way to fold this into SST.py, but it
 ## will get annoyed if they catch the Enterprise using the one it stole from them.
 ALGERON: Final = 2311.0
 IDIDIT: bool = False  # Controls if the Romulans are antagonistic
-
 
 class Upcoming:
     '''
@@ -38,6 +37,9 @@ class Upcoming:
         self.upcoming_input.append(incoming)
 
 
+UPCOMING_EVENTS: dict = []
+
+
 ## Controls whether debug features like print_debug() are active.
 DEBUG = True
 TESTING_MOVEMENT = True
@@ -46,7 +48,7 @@ TESTING_MOVEMENT = True
 ## As a result, my only choices were (a) put it here, or (b) initialize it
 ## every time I use it. The latter is inefficient, so I just decided to
 ## make a global variable.
-POSSIBLE_DAMAGES = [i/10 for i in range(50, 79)]
+POSSIBLE_DAMAGES = [i / 10 for i in range(50, 79)]
 
 
 def print_debug(string) -> None:
@@ -576,6 +578,10 @@ class Enterprise(object):
         # In other words, +slope if the Enterprise is moving vertically, otherwise -slope.
         slope = (unprocessed_slope * (1 if svert_diff > 0 else -1))
 
+        def reset_leaving():
+            for i in leaving:
+                leaving[i] = False
+
         direction = 1 if svert_diff > 0 else -1
 
         old_svert: int = self.svert
@@ -586,13 +592,14 @@ class Enterprise(object):
         new_svert: int
         new_shoriz: int
 
-        if not math.isinf(slope): #Old code: "abs(slope) != math.inf". Which is better?
+        if not math.isinf(slope):  # Old code: "abs(slope) != math.inf". Which is better?
+            leaving: dict = {'north': False, 'south': False, 'east': False, 'west': False}
+
             for i in range(abs(svert_diff)):
                 new_svert = old_svert + direction
                 new_shoriz = old_shoriz + slope
-                print(f'Iteration #{i}: {new_svert=}, {new_shoriz=}. *Current* galactic position: {old_gvert=}, {old_ghoriz=}')
-
-                leaving: dict = {'north': False, 'south': False, 'east': False, 'west': False}
+                print(
+                    f'Iteration #{i}: {new_svert=}, {new_shoriz=}. *Current* galactic position: {old_gvert=}, {old_ghoriz=}')
 
                 if new_svert < 0:
                     # Out of quadrant (v-)
@@ -659,6 +666,8 @@ class Enterprise(object):
                         old_gvert = new_gvert
                         old_ghoriz = new_ghoriz
 
+                        reset_leaving()
+
 
                 else:
                     x = self.check_movement_collision(new_svert, new_shoriz, old_shoriz)
@@ -670,7 +679,6 @@ class Enterprise(object):
 
         else:
             ## Horizontal movement
-            ## TODO: Figure out why this isn't being run.
 
             direction: int = 1 if shoriz_diff > 0 else -1
             leaving: dict = dict(east=False, west=False)
@@ -680,12 +688,14 @@ class Enterprise(object):
             for i in range(abs(shoriz_diff)):
                 new_shoriz = old_shoriz + direction
 
-                print(f"*Iteration {i}: {new_shoriz=}")
+                print(f"*Iteration {i}: {new_shoriz=} {new_ghoriz=}")
 
                 if new_shoriz >= 10:
                     leaving['east'] = True
+                    print("Leaving east!")
                     new_ghoriz = old_ghoriz + 1
                 elif new_shoriz < 0:
+                    print("Leaving west!")
                     leaving['west'] = True
                     new_ghoriz = old_ghoriz - 1
 
@@ -701,6 +711,7 @@ class Enterprise(object):
                             new_shoriz = 0
                         elif leaving['west']:
                             new_shoriz = 9
+                        reset_leaving()
 
                         self.ghoriz = new_ghoriz
                         old_ghoriz = new_ghoriz
@@ -740,7 +751,7 @@ class Enterprise(object):
 
         TODO: Add logic.
         """
-        return False, new_horiz # For now, just returning an "OK" response.
+        return False, new_horiz  # For now, just returning an "OK" response.
 
     def emergency_stop(self, vert, horiz):
         """
@@ -798,7 +809,6 @@ class Enterprise(object):
                 print("[*ARMORY*] Sir, that command does not make sense.")
                 return
             '''
-
 
         current_torp = 0
 
@@ -1150,7 +1160,7 @@ class Enterprise(object):
             )
             self.alive = False
 
-    def enter_quadrant(self, new_gvert, new_ghoriz)  -> bool:
+    def enter_quadrant(self, new_gvert, new_ghoriz) -> bool:
         '''
         Try to enter quadrant at (new_gvert, new_ghoriz).
         '''
@@ -1159,7 +1169,6 @@ class Enterprise(object):
             return False
         else:
             return True
-
 
 
 if __name__ == "__main__":

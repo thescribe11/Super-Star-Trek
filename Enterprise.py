@@ -194,7 +194,6 @@ Short-Range Sensors:         {self.repair_times['srsensors']}
             self.Manuever(x_disp, slope)
         else:
             self.InterQuadrantTravel()
-        return # TODO get the rest done.
 
     def Manuever(self, xdisp: int, slope: float):
         '''

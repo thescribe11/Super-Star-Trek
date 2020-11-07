@@ -137,8 +137,22 @@ def test_enterprise() -> None:
 
     print('\n** Begin movement check #7 (horizontal ++):')
     ent.impulse_move(math.inf, 0, 20)
-    print(f"{ent.ghoriz=}")
-    assert ent.ghoriz == 7, "[**ERROR**]: Horizontal Shoriz test #3 failed!" # Well, I fixed the in-quadrant movement, but now inter-quadrant movement is having problems.
+    print(f'{ent.ghoriz=}')
+    assert ent.ghoriz == 7, '[**ERROR**]: Horizontal Ghoriz test #3 failed!'
+    # Well, I fixed the in-quadrant movement, but now inter-quadrant movement is having problems.
+
+    ##  CLEANUP  ##
+    ent.gvert = 5
+    ent.ghoriz = 5
+    ent.svert = 5
+    ent.shoriz = 5
+    ##  END CLEANUP  ##
+
+    print('\n** Begin movement check #8 (horizontal --):')
+    ent.impulse_move(math.inf, 0, -20)
+    print(f'{ent.ghoriz=}')
+    assert ent.ghoriz == 3, '[**ERROR**]: Horizontal Ghoriz test #4 failed!'
+
 
 if __name__ == '__main__':
     test_enterprise()
