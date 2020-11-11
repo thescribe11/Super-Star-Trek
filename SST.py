@@ -671,6 +671,7 @@ class Enterprise(object):
 
                 else:
                     x = self.check_movement_collision(new_svert, new_shoriz, old_shoriz)
+                    print(f"{x=}")
                     if x[0]:
                         old_shoriz = x[1]
                         break
@@ -739,8 +740,23 @@ class Enterprise(object):
         """
 
         int_new_horiz: int = math.floor(new_horiz)
+        int_old_horiz = math.floor(old_horiz)
         print_debug(self.sector[new_vert][int_new_horiz])
+        print(f"{int_new_horiz=}, {int_old_horiz=}")
 
+        step: int
+        if int_new_horiz >= int_old_horiz:
+            step = 1
+        else:
+            step = -1
+
+        for horiz in range(int_old_horiz, int_new_horiz, step):
+            print("test iter #1")
+            if self.sector[new_vert][horiz] == '.':
+                print("It works!")
+                return False, 0
+
+        print("Activating fail-safe in check_movement_collision()!")
         return False, 0
 
     def check_h_movement_collision(self, new_horiz, old_horiz) -> (bool, int):

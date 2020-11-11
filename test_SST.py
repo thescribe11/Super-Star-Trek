@@ -2,6 +2,10 @@ from SST import Enterprise
 import math
 
 
+def test_check_movement_collision():
+    pass
+
+
 def test_enterprise() -> None:
     ent = Enterprise()
 
