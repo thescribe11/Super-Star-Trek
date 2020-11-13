@@ -275,7 +275,7 @@ class Enterprise(object):
             "Life Support": 0,
         }
 
-        if not DEBUG:
+        if __name__ == "__main__":
             for i in range(10):
                 for j in range(10):
                     to_add = random.randint(0, 6)
@@ -744,17 +744,32 @@ class Enterprise(object):
         print_debug(self.sector[new_vert][int_new_horiz])
         print(f"{int_new_horiz=}, {int_old_horiz=}")
 
-        step: int
-        if int_new_horiz >= int_old_horiz:
-            step = 1
-        else:
-            step = -1
+        step = 1 if int_new_horiz >= int_old_horiz else -1
 
         for horiz in range(int_old_horiz, int_new_horiz, step):
             print("test iter #1")
             if self.sector[new_vert][horiz] == '.':
-                print("It works!")
                 return False, 0
+            elif self.sector[new_vert][horiz] == 'K':
+                for klingon in self.local_klingons_list:
+                    found: bool = False
+                    if klingon.is_at(new_vert, horiz):
+                        print("Klingon detected!")
+                        found = True
+
+                        if (
+                            (yorn := input("WARNING: Klingon detected in the Enterprise's flight path.\nRam it? > "))
+                            .upper()
+                            .startswith("Y")
+                        ):
+                            pass  # Make a kill_klingon() function that kills the Klingon, adds score, and cleans up the starmap &cetera.
+
+
+                if not found:
+                    raise LookupError(  # I wasn't sure what type of error to use; this was the closest I could find.
+                        'It appears that the Klingon is not where it should be.\nHOUSTON, WE HAVE A PROBLEM!')
+
+
 
         print("Activating fail-safe in check_movement_collision()!")
         return False, 0
