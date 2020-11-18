@@ -63,7 +63,7 @@ def print_lrscan(galaxy: list, gvert: int, ghoriz: int, damaged: bool):
         for vert in [gvert - 1, gvert, gvert + 1]:
             print("┃ ", end="")
             for horiz in (ghoriz - 1, ghoriz, ghoriz + 1):
-                if -1 < vert and 10 > vert and -1 < horiz and 10 > horiz:
+                if -1 < vert < 10 and -1 < horiz < 10:
                     print(
                         f"{galaxy[vert][horiz][0]}{galaxy[vert][horiz][1]}{galaxy[vert][horiz][2]}",
                         end=" ",
@@ -80,7 +80,7 @@ def print_starchart(galaxy, visited, gvert: int, ghoriz: int, is_damaged: bool):
     for vert in range(10):
         print(f"%i{' ' if vert < 9 else ''} ┃ " % int(vert + 1), end="")
         for horiz in range(10):
-            if visited[vert][horiz] == True and is_damaged == False:
+            if visited[vert][horiz] and is_damaged == False:
                 print(
                     "{}{}{} ".format(
                         galaxy[vert][horiz][0],
@@ -90,9 +90,9 @@ def print_starchart(galaxy, visited, gvert: int, ghoriz: int, is_damaged: bool):
                     end="",
                 )
             elif (
-                is_damaged
-                and vert not in (gvert - 1, gvert, gvert + 1)
-                and horiz not in (ghoriz - 1, ghoriz, ghoriz + 1)
+                    is_damaged
+                    and vert not in (gvert - 1, gvert, gvert + 1)
+                    and horiz not in (ghoriz - 1, ghoriz, ghoriz + 1)
             ):
                 print("??? ", end="")
             else:
@@ -114,44 +114,45 @@ def print_damage(damage):
         if damage[i] > 0:
             amount += 1
             stdout.write("> ")
-            print(f"{i}:{''.join([' ' for _ in range(23-len(i))])}{damage[i]}")
+            print(f"{i}:{''.join([' ' for _ in range(23 - len(i))])}{damage[i]}")
     if amount == 0:
         print("*************\n* NO DAMAGE *\n*************")
 
 
 """
-## Damage to the short-range sensors severely reduces their range.
-## Sorry about the weird formatting for the initial def statement; Black doesn't lots of comma-seperated values within a parenthesis.
+Damage to the short-range sensors severely reduces their range.
+Sorry about the weird formatting for the initial def statement; Black doesn't lots of comma-seperated values within a 
+parenthesis.
 """
 
 
 def print_d_srscan(
-    sector,
-    ghoriz,
-    gvert,
-    shoriz,
-    svert,
-    alert,
-    torps,
-    energy,
-    klingons,
-    shields,
-    shield_stat,
-    speed,
-    e_condition,
-    e_reserves,
-    date,
-    time_remaining,
+        sector,
+        ghoriz,
+        gvert,
+        shoriz,
+        svert,
+        alert,
+        torps,
+        energy,
+        klingons,
+        shields,
+        shield_stat,
+        speed,
+        e_condition,
+        e_reserves,
+        date,
+        time_remaining,
 ):
     print("    1 2 3 4 5 6 7 8 9 10")
     print("  ┏━━━━━━━━━━━━━━━━━━━━━┓")
     for vert in range(10):
         stdout.write(
-            f"{''.join([' ' for _ in range(2-(1 if vert<9 else 2))])}{vert+1}┃"
+            f"{''.join([' ' for _ in range(2 - (1 if vert < 9 else 2))])}{vert + 1}┃"
         )
         for horiz in range(10):
             if ((vert == svert) or (vert == svert - 1) or (vert == svert + 1)) and (
-                (horiz == shoriz) or (horiz == shoriz - 1) or (horiz == shoriz + 1)
+                    (horiz == shoriz) or (horiz == shoriz - 1) or (horiz == shoriz + 1)
             ):
                 stdout.write(f" {sector[vert][horiz]}")
             else:
@@ -159,7 +160,7 @@ def print_d_srscan(
         stdout.write(" ┃   ")
 
         if vert == 0:
-            print(f"Sector {svert+1},{shoriz+1} of quadrant {gvert+1},{ghoriz+1}")
+            print(f"Sector {svert + 1},{shoriz + 1} of quadrant {gvert + 1},{ghoriz + 1}")
         elif vert == 1:
             print(f"Condition:    {alert}")
         elif vert == 2:
@@ -195,32 +196,32 @@ def print_d_srscan(
 
 
 def print_srscan(
-    sector,
-    position,
-    alert,
-    torps,
-    energy,
-    klingons,
-    shields,
-    shield_stat,
-    speed,
-    e_condition,
-    e_reserves,
-    date,
-    time_remaining,
+        sector,
+        position,
+        alert,
+        torps,
+        energy,
+        klingons,
+        shields,
+        shield_stat,
+        speed,
+        e_condition,
+        e_reserves,
+        date,
+        time_remaining,
 ):
     print("    1 2 3 4 5 6 7 8 9 10")
     print("  ┏━━━━━━━━━━━━━━━━━━━━━┓")
     for vert in range(10):
         stdout.write(
-            f"{''.join([' ' for _ in range(2-(1 if vert<9 else 2))])}{vert+1}┃"
+            f"{''.join([' ' for _ in range(2 - (1 if vert < 9 else 2))])}{vert + 1}┃"
         )
         for horiz in range(10):
             stdout.write(f" {sector[vert][horiz]}")
         stdout.write(" ┃   ")
         if vert == 0:
             print(
-                f"Sector {position[1][1]+1},{position[1][0]+1} of quadrant {position[0][1]+1},{position[0][0]+1}"
+                f"Sector {position[1][1] + 1},{position[1][0] + 1} of quadrant {position[0][1] + 1},{position[0][0] + 1}"
             )
         elif vert == 1:
             print(f"Condition:    {alert}")
@@ -257,7 +258,7 @@ def print_srscan(
 
 
 def enter_quadrant(
-    quadrant: list, gvert, ghoriz, svert, shoriz, energy: int
+        quadrant: list, gvert, ghoriz, svert, shoriz, energy: int
 ) -> Tuple[list, list, str]:
     local_klingons_list = []
     placed = 0
@@ -274,7 +275,7 @@ def enter_quadrant(
             if sector[y][x] == ".":
                 sector[y][x] = "K"
                 local_klingons_list.append(
-                    Klingon(x=y, y=x, health=random.randint(200, 600))
+                    Klingon(y, x, random.randint(200, 600))
                 )
 
     placed = 0
@@ -313,5 +314,4 @@ def enter_quadrant(
     else:
         panic = "RED"
 
-    return (sector, local_klingons_list, panic)
-
+    return sector, local_klingons_list, panic

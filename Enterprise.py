@@ -1,258 +1,577 @@
+"""
+I would have put this in classes, but that creates a really nasty circular import that I decided wasn't worth it.
+"""
+
+import displays
 import random
 import math
-import sys
+from helper_funcs import create_array
 
-def cin(prompt: str, typer=str, / ):
-    '''
-    Returns command-line input in type-casted form.
-    '''
-    if typer == "str":
-        return input(prompt + "\n> ")
-    elif typer == 'int':
-        return int(input(prompt + "\n> "))
-    elif typer == 'float':
-        return float(input(prompt + "\n> "))
+DEBUG = True  # Determines whether or not some features are enabled.
 
-def Slope(x1: int, y1: int, x2: int, y2: int) -> float:
-    try:
-        return (float)(y2 - y1) / (x2 - x1)
-    except ZeroDivisionError:
-        return None  
+
+def print_debug(*args, **kwargs) -> None:
+    """
+    I regret ever creating it, but now I'm stuck with it since I don't want to go through and find every reference.
+
+    Next time I'll just use the logging module.
+    """
+    pass
+
 
 class Enterprise(object):
-    '''
-This class represents the U.S.S. Enterprise, which the player controls.
-
-Public functions:
-
-~ Movement:
-- WarpMove(), moves the Enterprise via Warp Drive.
-- ImpulseMove(), moves the Enterprise via the Impulse Drive.
-
-~ Weapons:
-- FirePhasers(), which fires the Phasers at enemies.
-- FireTorpedoes(), fires the Photon Torpedoes
-
-~ Shields:
-- ChangeShieldEnergy(), add/remove energy from shields.
-- ChangeShieldStatus(), on/off switch for the shields.
-
-~ Damage control:
-- Rest(), skip time spent in repairs.
-- GetDamage(), prints out current damage.
-- CheckDamage( <partOfShip> ), sees if <partOfShip> is damaged.
-
-~ Sensors:
-- LrScan(), prints out map of known space.
-- SrScan(), prints out map of current sector.
-    '''
-    energy = 3000           # Available energy remaining
-    shield_energy = 200     # How much energy remains in the shields.
-    shield_status = False   # Whether or not the shields are up
-    torpedoes = 8           # Remaining photon torpedoes
-    is_alive = True         # Determines if the Enterprise still exists.
-
-    location = {               # Represents the Enterprise's current location
-        'sx': random.randint(0, 9),  # Sector x
-        'sy': random.randint(0, 9),  # Sector y
-        'qx': random.randint(0, 7),  # Quadrant x
-        'qy': random.randint(0, 7)   # Quadrant y
-    }
-    
-    damage = {                    # Says which (if any) parts of the ship are damaged.
-        "shields": False,      # Shield emitters
-        "phasers": False,      # Phaser arrays
-        "torps": False,        # Photon torpedo launching systems
-        "warp": False,         # Warp drive
-        "impulse": False,      # Impulse drive
-        "environment": False,  # Air-exchangers, etc
-        "medical": False,
-        "lrsensors": False,   # Long-range sensors
-        "srsensors": False,   # Short-range sensors
-    }
-
-    repair_times = {
-        "shields": 0,      # Shield emitters
-        "phasers": 0,      # Phaser arrays
-        "torps": 0,        # Photon torpedo launching systems
-        "warp": 0,         # Warp drive
-        "impulse": 0,      # Impulse drive
-        "environment": 0,  # Air-exchangers, etc
-        "medical": 0,
-        "lrsensors": 0,   # Long-range sensors
-        "srsensors": 0,   # Short-range sensors
-    }
-
-    def __init__(self, galaxy: list) -> None:
+    def __init__(self, testing=False):
         super().__init__()
-        # Put initialization code here if necessary.
-        self.galaxy = galaxy
-        self.galaxy[self.location['qy']][self.location['qx']].SetObject('E', self.location['sx'], self.location['sy'])
+        self.leave_attempts = 0
+        self.energy = 3000
+        self.shield_stat = False
+        self.shields = 1500
+        self.torpedoes = 8
+        self.crystals = 0  # I may or may not keep this
 
-    def ChangeShieldEnergy(self):
-        if self.damage['shields'] == False:  # Check to see if the shields are damaged.
-            amount = cin("How much energy would you like to transfer to shields?", float)
-            if 0 <= self.shield_energy + amount <= 200:
-                self.shield_energy += amount
+        self.gvert, self.ghoriz, self.svert, self.shoriz = (  # Place the Enterprise at a random location.
+            random.randint(0, 9),
+            random.randint(0, 9),
+            random.randint(0, 9),
+            random.randint(0, 9),
+        )
+
+        self.klingons = 0
+        self.warp_speed = 5
+        self.environment_reserves = 100.0
+        self.docked = False
+        self.date = 100.0 * (int)(31.0 * random.random() + 20.0)
+        self.time_remaining = random.randint(8, 15)
+        self.cloaked = False
+
+        global_klingons = create_array(10, 10)
+        global_starbases = create_array(10, 10)
+        global_stars = create_array(10, 10)
+
+        self.galaxy = create_array(10, 10, value=[0, 0, 0])
+
+        self.sector = create_array(10, 10, value=".")
+        self.quadrants_visited = create_array(10, 10, value=False)
+
+        self.damage = {
+            "Shields": 0,
+            "Phasers": 0,
+            "Photon Torpedoes": 0,
+            "Warp Drive": 0,
+            "Impulse Drive": 0,
+            "Communications": 0,
+            "Short-Range Sensors": 0,
+            "Long-Range Sensors": 0,
+            "Life Support": 0,
+        }
+
+        if not DEBUG:
+            for i in range(10):
+                for j in range(10):
+                    to_add = random.randint(0, 6)
+                    if to_add == 5:
+                        to_add = 0
+                    global_klingons[j][i] = to_add
+                    self.klingons += to_add
+                    global_stars[j][i] = random.randint(0, 9)
+
+            for i in range(0, random.randint(3, 6)):
+                x = random.randint(0, 9)
+                y = random.randint(0, 9)
+                global_starbases[y][x] = 1
+
+            for i in range(10):
+                for j in range(10):
+                    self.galaxy[j][i][0] = global_klingons[j][i]
+                    self.galaxy[j][i][1] = global_starbases[j][i]
+                    self.galaxy[j][i][2] = global_stars[j][i]
+
+            self.password = (
+                displays.beginning_spiel()
+            )  # The password is used for authenticating things like abandoning ship.
+            self.sector_current = False
+
+            self.local_klingons_list = []
+
+            self.alive = True
+
+    def change_shields(self):
+        """
+        Add/subtract energy from the shields.
+        """
+
+        try:
+            amount = input(
+                "\n[*SHIELD CONTROL*] How much energy would you like to transfer? (negative values return energy to "
+                "main capacitors)\n> "
+            )
+        except ValueError:
+            print("[*SHIELD CONTROL*] Sir, that is not a valid amount.")
+
+        ## TODO Add energy amount changing.
+
+    def check_movement_collision(self, new_vert: int, new_horiz: float, old_horiz: float) -> (bool, float):
+        """
+        Check to see if the Enterprise has crashed into anything while moving.
+
+        TODO: Add logic.
+        """
+
+        int_new_horiz: int = math.floor(new_horiz)
+        int_old_horiz = math.floor(old_horiz)
+        print_debug(self.sector[new_vert][int_new_horiz])
+        print(f"{int_new_horiz=}, {int_old_horiz=}")
+
+        step = 1 if int_new_horiz >= int_old_horiz else -1
+
+        for horiz in range(int_old_horiz, int_new_horiz, step):
+            print("test iter #1")
+            if self.sector[new_vert][horiz] == '.':
+                return False, 0
+            elif self.sector[new_vert][horiz] == 'K':
+                for klingon in self.local_klingons_list:
+                    found: bool = False
+                    if klingon.is_at(new_vert, horiz):
+                        print("Klingon detected!")
+                        found = True
+
+                        if (
+                                (
+                                        yorn := input(
+                                            "WARNING: Klingon detected in the Enterprise's flight path.\nRam it? > "))
+                                        .upper()
+                                        .startswith("Y")
+                        ):
+                            pass  # Make a kill_klingon() function that kills the Klingon, adds score, and cleans up the starmap &cetera.
+
+                if not found:
+                    raise LookupError(  # I wasn't sure what type of error to use; this was the closest I could find.
+                        'It appears that the Klingon is not where it should be.\nHOUSTON, WE HAVE A PROBLEM!')
+
+        print("Activating fail-safe in check_movement_collision()!")
+        return False, 0
+
+    def check_h_movement_collision(self, new_horiz, old_horiz) -> (bool, int):
+        """
+        Check to see if the Enterprise has crashed into anything while moving.
+
+        This is a horizontal variant of check_movement_collision().
+
+        TODO: Add logic.
+        """
+        return False, new_horiz  # For now, just returning an "OK" response.
+
+    def emergency_stop(self, vert, horiz):
+        """
+        Performs emergency stopping maneuvers.
+        """
+        print(
+            "\n***WARNING*** Object detected at sector (%i, %.0f);\nEmergency stop requires %i units of energy."
+            % (vert, horiz, (to_sub := random.randint(110, 130)))
+        )
+        self.energy -= to_sub
+
+    def add_quadrant_to_chart(self):
+        """
+        Adds quadrants to the Starchart
+        """
+        for vert in (self.gvert - 1, self.gvert, self.gvert + 1):
+            for horiz in (self.ghoriz - 1, self.ghoriz, self.ghoriz + 1):
+                try:
+                    self.quadrants_visited[vert][horiz] = True
+                except IndexError:
+                    continue
+
+    def calcvector(self, direction):
+        # Work out the direction increment vector
+        # hinc = horizontal increment
+        # vinc = vertical increment
+        if 3 < direction < 7:
+            hinc = -1
+        elif direction < 3 or direction > 7:
+            hinc = 1
+        else:
+            hinc = 0
+        if 5 > direction > 1:
+            vinc = -1
+        elif direction > 5:
+            vinc = 1
+        else:
+            vinc = 0
+        return hinc, vinc
+
+    def launch_torps(self, to_fire):
+        if to_fire > self.torpedoes:
+            print(
+                "[*ARMORY*] What do you think we are, the Bank of Ferenginar?! We don't even HAVE that many torepdoes!"
+            )
+            return
+
+        queue: list = []
+        for i in range(1, to_fire + 1):
+            x = input(f"Input the target direction for torpedo #{i}\n> ")
+            placeholder = x.split(" ")
+            # try:
+            queue.append(int(x))
+            '''except:   
+                print("[*ARMORY*] Sir, that command does not make sense.")
+                return
+            '''
+
+        current_torp = 0
+
+        for direction in queue:
+            current_torp += 1
+            print(f"\n* Torpedo #{current_torp}\nTorpedo track:")
+            if 1 <= direction <= 9:
+                # Work out the horizontal and vertical co-ordinates
+                # of the Enterprise in the current sector
+                # 0,0 is top left and 9,9 is bottom right
+                horiz = self.shoriz
+                vert = self.svert
+                # And calculate the direction to fire the torpedo
+                hinc, vinc = self.calcvector(direction)
+                # A torpedo only works in the current sector and stops moving
+                # when we hit something solid
+                out = False
+                while not out:
+                    print(f"({vert + 1},{horiz + 1}) ", end="")
+                    # Calculate the movement vector
+                    vert = vert + vinc
+                    horiz = horiz + hinc
+
+                    # Is the torpedo still in the sector?
+                    if vert < 0 or vert > 9 or horiz < 0 or horiz > 9:
+                        print("\nTorpedo missed.\n")
+                        break
+                    elif self.sector[vert][horiz] != ".":
+                        out = True
+                    # Have we hit an object?
+                    if self.sector[vert][horiz] == "K":
+                        # Hit and destroyed a Klingon!
+                        out = True
+                        self.sector[vert][horiz] = "."
+                        for i in self.local_klingons_list:
+                            if i.y == vert and i.x == horiz:
+                                self.local_klingons_list.remove(i)
+                        self.galaxy[self.gvert][self.ghoriz][0] -= 1
+                        self.klingons -= 1
+                        print(f"\n***Klingon at sector ({vert}, {horiz}) destroyed.")
+                    elif self.sector[vert][horiz] == "B":
+                        # Destroying a starbase ends the game.
+                        out = True
+                        self.sector[vert][horiz] = "."
+                        self.alive = False
+                        displays.type_slow(
+                            f"\n\n*** Starbase at ({vert}, {horiz}) destroyed. ***\n\nYou monster.\n"
+                        )
+                    elif self.sector[vert][horiz] == "+":
+                        # Shooting a torpedo into a star has no effect... usually.
+                        out = True
+                        if random.randint(0, 7) < 7:
+                            print("\nTorpedo impacts star... no effect.")
+                        else:
+                            print("\nTorpedo impacts star... the star explodes.")
+                            self.galaxy[self.gvert][self.ghoriz][2] -= 1
+                            self.sector[vert][horiz] = "."
+                            for i in self.local_klingons_list:
+                                if [i.y, i.x] in [
+                                    [vert - 1, horiz - 1],
+                                    [vert - 1, horiz],
+                                    [vert - 1, horiz + 1],
+                                    [vert, horiz - 1],
+                                    [vert, horiz],
+                                    [vert, horiz + 1],
+                                    [vert + 1, horiz - 1],
+                                    [vert + 1, horiz],
+                                    [vert + 1, horiz + 1],
+                                ]:
+                                    print(
+                                        f"***Klingon at sector ({i.y}, {i.x}) destroyed in the explosion."
+                                    )
+                                    self.local_klingons_list.remove(i)
+                                    self.galaxy[self.gvert][self.ghoriz][0] -= 1
+                                    self.klingons -= 1
+                            if [self.svert, self.shoriz] in [
+                                [vert - 1, horiz - 1],
+                                [vert - 1, horiz],
+                                [vert - 1, horiz + 1],
+                                [vert, horiz - 1],
+                                [vert, horiz],
+                                [vert, horiz + 1],
+                                [vert + 1, horiz - 1],
+                                [vert + 1, horiz],
+                                [vert + 1, horiz + 1],
+                            ]:
+                                print(
+                                    "\nThe Enterprise is caught in the shockwave",
+                                    end="",
+                                )
+                                if self.shield_stat:
+                                    damage_amount = random.randint(500, 700)
+                                    if damage_amount < self.shields:
+                                        print(
+                                            ", dealing %i damage to the shields."
+                                            % damage_amount
+                                        )
+                                        self.shields -= damage_amount
+                                    else:
+                                        print(
+                                            ". The blast overwhelms the shields, disabling the shield generator."
+                                        )
+                                        self.damage["Shields"] += random.randint(5, 30) / 10
+                                        self.add_collision_damage(1)
+                                else:
+                                    print(", which causes massive damage.")
+                                    self.add_collision_damage(3)
+
+                # One fewer torpedo
+                self.torpedoes -= 1
+
+    def add_collision_damage(self, severity):
+        """
+        Collision damage is *really* annoying.
+        """
+
+        for i in range(severity):
+            decider = random.randint(0, 10)
+            if decider == 0:
+                self.damage["Warp Drive"] += random.choice(POSSIBLE_DAMAGES)
+                print("[*DAMAGE CONTROL*] Sir, the warp drive has been damaged.")
+            elif decider == 1:
+                self.damage["Shields"] += random.choice(POSSIBLE_DAMAGES)
+                print("[*DAMAGE CONTROL*] The shield generator is crushed.")
+            elif decider == 2:
+                self.damage["Photon Torpedoes"] += random.choice(POSSIBLE_DAMAGES)
+                print(
+                    "[*DAMAGE CONTROL*] Photon torpedo launching systems have been damaged."
+                )
+            elif decider == 3:
+                self.damage["Impulse Drive"] += random.choice(POSSIBLE_DAMAGES)
+                print("[*DAMAGE CONTROL*] Captain, the impulse drive is damaged.")
+            elif decider == 4:
+                self.damage["Communications"] += random.choice(POSSIBLE_DAMAGES)
+                print(
+                    "[*DAMAGE CONTROL*] The subspace communications equipment has been smashed."
+                )
+            elif decider == 5:
+                self.damage["Short-Range Sensors"] += random.choice(POSSIBLE_DAMAGES)
+                print(
+                    "[*DAMAGE CONTROL*] Short-range sensors have been rendered inoperable."
+                )
+            elif decider == 6:
+                self.damage["Long-Range Sensors"] += random.choice(POSSIBLE_DAMAGES)
+                print(
+                    "[*DAMAGE CONTROL*] Long-range sensors have been rendered inoperable."
+                )
+            elif decider == 7:
+                self.damage["Life Support"] += random.choice(POSSIBLE_DAMAGES)
+                print(
+                    "[*DAMAGE CONTROL*] Sir, life support has been critically damaged! We still have reserves, "
+                    "but they won't last long. "
+                )
+
+    def photons(self):
+        if self.torpedoes == 0:
+            print("[*ARMORY*] I'm afraid that we are out of torpedoes, sir.")
+            return
+
+        try:
+            fire_number = int(
+                input("[*ARMORY*] How many torpedoes would you like to fire?\n> ")
+            )
+        except ValueError:
+            print(
+                "\n[*ARMORY*] Sir, can you please speak more clearly? I cannot understand what you just said."
+            )
+            return
+        print(fire_number)
+        if 3 < fire_number < self.torpedoes:
+            print("\n[*ARMORY*] Captain, firing that many would melt the tubes!")
+            fire_anyway = input(
+                "\nWould you like to fire anyway? (Doing so will incur damage)\n> "
+            )
+            if (
+                    fire_anyway == "Y"
+                    or fire_anyway == "y"
+                    or fire_anyway == "yes"
+                    or fire_anyway == "Yes"
+            ):
+                self.launch_torps(fire_number)
+                for i in range(fire_number):
+                    self.damage["Photon Torpedoes"] += random.choice([0.1, 0.2, 0.3])
+
+        elif fire_number > self.torpedoes:
+            print(
+                "\n[*ARMORY*] What do you think we are, the Bank of Ferenginar?! We don't HAVE that many torpedoes!"
+            )
+
+        else:
+            self.launch_torps(fire_number)
+        self.klingons_attack()  # The Klingons get a chance to fire back.
+
+    def klingons_attack(self):
+        """
+        It wouldn't be fair for the Klingons if they weren't allowed to fire back...
+        """
+
+        total_units = 0
+        if self.galaxy[self.gvert][self.ghoriz][0] > 0:
+            print("[*Lt. SULU*] Sir, the Klingons are attacking.")
+            if self.shield_stat:  # The shields block most attacks, but only if they are turned on.
+                for i in self.local_klingons_list:
+                    print()
+                    to_add = random.randint(50, 200)
+                    self.shields -= to_add
+                    total_units += to_add
+                    if self.shields < 0:
+                        self.shields = 0
+                        self.shield_stat = False
+
+                    if self.shield_stat or random.randint(0, 10) == 1:
+                        decider = random.randint(0, 10)
+                        if decider == 0:
+                            self.damage["Warp Drive"] += random.choice(POSSIBLE_DAMAGES)
+                            displays.type_fast(
+                                "[*DAMAGE CONTROL*] ***CRITICAL HIT--Warp Drive"
+                            )
+                        elif decider == 1:
+                            self.damage["Shields"] += random.choice(POSSIBLE_DAMAGES)
+                            displays.type_fast(
+                                "[*DAMAGE CONTROL*] ***CRITICAL HIT--Shield Generator"
+                            )
+                        elif decider == 2:
+                            self.damage["Photon Torpedoes"] += random.choice(
+                                POSSIBLE_DAMAGES
+                            )
+                            displays.type_fast(
+                                "[*DAMAGE CONTROL*] ***CRITICAL HIT--Photon Torpedoes"
+                            )
+                        elif decider == 3:
+                            self.damage["Impulse Drive"] += random.choice(
+                                POSSIBLE_DAMAGES
+                            )
+                            displays.type_fast(
+                                "[*DAMAGE CONTROL*] ***CRITICAL HIT--Impulse Drive"
+                            )
+                        elif decider == 4:
+                            self.damage["Communications"] += random.choice(
+                                POSSIBLE_DAMAGES
+                            )
+                            displays.type_fast(
+                                "[*DAMAGE CONTROL*] ***CRITICAL HIT--Subspace Communications Equipment"
+                            )
+                        elif decider == 5:
+                            self.damage["Short-Range Sensors"] += random.choice(
+                                POSSIBLE_DAMAGES
+                            )
+                            displays.type_fast(
+                                "[*DAMAGE CONTROL*] ***CRITICAL HIT--Short-Range Sensors"
+                            )
+                        elif decider == 6:
+                            self.damage["Long-Range Sensors"] += random.choice(
+                                POSSIBLE_DAMAGES
+                            )
+                            displays.type_fast(
+                                "[*DAMAGE CONTROL*] ***CRITICAL HIT--Long-Range Sensors"
+                            )
+                        elif decider == 7:
+                            self.damage["Life Support"] += random.choice(
+                                POSSIBLE_DAMAGES
+                            )
+                            displays.type_fast(
+                                "[*DAMAGE CONTROL*] ***CRITICAL HIT--Life Support"
+                            )
+                print(
+                    "%i damage has been incurred, reducing shields to %.0f percent."
+                    % (total_units, (self.shields / 1500) * 100)
+                )
             else:
-                print("I'm sorry, but the shields can't take that amount of energy.")
-            print("\n")
+                for i in self.local_klingons_list:
+                    print()
+                    yorn = random.randint(0, 10)
+                    if yorn > 9:
+                        return
+                    decider = random.randint(0, 10)
+                    if decider == 0:
+                        self.damage["Warp Drive"] += random.choice(POSSIBLE_DAMAGES)
+                        displays.type_fast(
+                            "[*DAMAGE CONTROL*] ***CRITICAL HIT--Warp Drive"
+                        )
+                    elif decider == 1:
+                        self.damage["Shields"] += random.choice(POSSIBLE_DAMAGES)
+                        displays.type_fast(
+                            "[*DAMAGE CONTROL*] ***CRITICAL HIT--Shield Generator"
+                        )
+                    elif decider == 2:
+                        self.damage["Photon Torpedoes"] += random.choice(
+                            POSSIBLE_DAMAGES
+                        )
+                        displays.type_fast(
+                            "[*DAMAGE CONTROL*] ***CRITICAL HIT--Photon Torpedoes"
+                        )
+                    elif decider == 3:
+                        self.damage["Impulse Drive"] += random.choice(POSSIBLE_DAMAGES)
+                        displays.type_fast(
+                            "[*DAMAGE CONTROL*] ***CRITICAL HIT--Impulse Drive"
+                        )
+                    elif decider == 4:
+                        self.damage["Communications"] += random.choice(POSSIBLE_DAMAGES)
+                        displays.type_fast(
+                            "[*DAMAGE CONTROL*] ***CRITICAL HIT--Subspace Communications Equipment"
+                        )
+                    elif decider == 5:
+                        self.damage["Short-Range Sensors"] += random.choice(
+                            POSSIBLE_DAMAGES
+                        )
+                        displays.type_fast(
+                            "[*DAMAGE CONTROL*] ***CRITICAL HIT--Short-Range Sensors"
+                        )
+                    elif decider == 6:
+                        self.damage["Long-Range Sensors"] += random.choice(
+                            POSSIBLE_DAMAGES
+                        )
+                        displays.type_fast(
+                            "[*DAMAGE CONTROL*] ***CRITICAL HIT--Long-Range Sensors"
+                        )
+                    elif decider == 7:
+                        self.damage["Life Support"] += random.choice(POSSIBLE_DAMAGES)
+                        displays.type_fast(
+                            "[*DAMAGE CONTROL*] ***CRITICAL HIT--Life Support"
+                        )
+
+                    # TODO add more options as required.
+
+    def NOPE(self) -> None:
+        """
+        The Player is attempting to leave the galaxy.
+        I can't let that happen, so the player gets two warnings.
+        The third time they attempt to do this I will be forced to concede that their
+        navigation is abominable, and thus kill them.
+
+        It's a hard world we live in; I can't just let any dumb schmuck try to protect
+        the Federation from the Klingons.
+        """
+
+        if self.leave_attempts <= 3:
+            displays.type_slow(
+                "\nYOU HAVE ATTEMPTED TO CROSS THE NEGATIVE ENERGY BARRIER AT THE EDGE OF THE GALAXY.\nTHE THIRD TIME "
+                "YOU TRY TO DO THIS THE ENTERPRISE WILL BE DESTROYED. "
+            )
+            self.leave_attempts += 1
         else:
-            print("I'm sorry sir, but the shield emitters are fused; I cannot do anything until they are repaired.")
-        
+            displays.type_slow(
+                "\nYou have attempted to cross the negative energy barrier at the edge of the galaxy three "
+                "times.\n\nYour navigation is abominable. "
+            )
+            self.alive = False
 
-    def ChangeShieldStatus(self) -> int:
-        if self.damage['shields'] == False:
-            which = cin("To turn the shields on, type <1>.\nTo turn them off, type <2>.")
-            if which == '0':
-                self.shield_status = False
-                print("Shields are disabled.\n")
-                return 0
-            elif which == '1':
-                self.shield_status = True
-                print("Shields are up.\n")
-                return 0
-            else:
-                print("Sir? I do not understand what you are saying.\n")
-                return 1
+    def enter_quadrant(self, new_gvert, new_ghoriz) -> bool:
+        """
+        Try to enter quadrant at (new_gvert, new_ghoriz).
+        """
+        if (new_gvert < 0) or (new_gvert >= 10) or (new_ghoriz < 0) or (new_ghoriz >= 10):
+            self.NOPE()
+            return False
         else:
-            print("I'm sorry sir, but the shield emitters are fused; I cannot do anything until they are repaired.\n")
-            return 1
-
-    def GetDamage(self) -> None:
-        '''
-        Outputs a list of repair times for different parts of the Enterprise.
-        '''
-        
-        output = f"""
-Department               Repair time
--------------------------------------
-Shields:                     {self.repair_times['shields']}
-Phasers:                     {self.repair_times['phasers']}
-Torpedoes:                   {self.repair_times['torps']}
-Warp Drive:                  {self.repair_times['warp']}
-Impulse Drive:               {self.repair_times['impulse']}
-Life Support:                {self.repair_times['environment']}
-Med-bay:                     {self.repair_times['medical']}
-Long-Range Sensors:          {self.repair_times['lrsensors']}
-Short-Range Sensors:         {self.repair_times['srsensors']}
-        """  # Oh, how I love f-strings!
-        print(output)
-        return None
-
-    def SrScan(self):
-        print("┌─────────────────────────┐")
-        print("│    1 2 3 4 5 6 7 8 9 10 │")
-        for i in range(10):  # Iterate through the quadrant.
-            print("│ ", end="")
-            print(i + 1, end="")
-            if i < 9:
-                print("  ", end="")
-            else:
-                print(" ", end="")
-
-            self.galaxy[self.location['qy']][self.location['qx']].SrPrintout(i)
-
-            # And this is when I wish that Python had switch-case statements...
-            if i == 0:
-                print(" │ >                Status                <")
-            elif i == 1:
-                print(" │ ----------------------------------------")
-            elif i == 2:
-                print(f" │ Energy:    {self.energy}")
-            elif i == 3:
-                print(f" │ Torpedoes: {self.torpedoes}")
-            elif i == 4:
-                print(f" │ Shields:   {('Down' if self.shield_status == False else 'Up')}, {self.shield_energy} energy remaining.")
-            elif i == 6:  # Not a typo
-                print(f" │ Location: Sector ({self.location['sx']+1},{int(self.location['sy']+1)}) of quadrant ({self.location['qx']+1},{self.location['qy']+1})")
-            else:
-                print(" │ ")
-        print("└─────────────────────────┘")
-
-    def LrScan(self):
-        pass  # Complete this sometime else.
-    
-    def Move(self):
-        movement_type = cin("Impulse [0] or Warp [1]?", "int")
-        if movement_type >= 2:
-            print("I'm sorry sir, but the Enterprise is not equipped for intergalactic travel.")
-        elif movement_type < 0:
-            print("Sir, you aren't making any sense.")
-        
-        raw_displacement = cin("Please enter x and y displacement.", "str").split(' ')
-        semiprocessed_displacement = [i for i in raw_displacement if i != " "]
-        x_disp = int(semiprocessed_displacement[0])
-        y_disp = int(semiprocessed_displacement[1])
-        x2 = self.location['sx'] + x_disp
-        y2 = self.location['sy'] + y_disp
-
-        slope = Slope(self.location['sx'], self.location['sy'], x2, y2)
-        if slope is None:
-            slope = y_disp
-        if movement_type == 0:
-            self.Manuever(x_disp, slope)
-        else:
-            self.InterQuadrantTravel()
-
-    def Manuever(self, xdisp: int, slope: float):
-        '''
-        In-quadrant moevement.
-        '''
-
-        if xdisp != 0: # To avoid wonkiness
-            for i in range(0, xdisp, (1 if xdisp > 1 else - 1)):
-                new_x = self.location['sx'] + (1 if xdisp > 1 else - 1)          # New x pos
-                new_y = self.location['sy'] + (slope if xdisp > 1 else (-slope))  # New y pos
-                
-                if (new_y < 0) or (new_x < 0):
-                    print("I'm sorry sir, but we can't leave the quadrant on impulse drive.")
-                    break
-
-                if (emptiness := self.galaxy[self.location['qy']][self.location['qx']].CheckIsEmpty(new_x, new_y)) == True: # Check to see if sector is uninhabited
-                    self.galaxy[self.location['qy']][self.location['qx']].SetObject('E', new_x, new_y)  # Update the quadrant
-                    self.galaxy[self.location['qy']][self.location['qx']].SetObject('.', self.location['sx'], self.location['sy'])
-                    self.location['sx'] = new_x; self.location['sy'] = new_y  # Change the Enterprise's location
-
-                    self.energy -= (1 + abs(slope)) * (random.randint(5, 8))
-                elif emptiness == False:
-                    self.EmergencyStop()
-                    break
-                else:
-                    print("I'm sorry sir, but we can't leave the quadrant on impulse drive.")
-                    break
-        else:
-            for i in  range(0, int(slope), (1 if int(slope) > 1 else - 1)):
-                new_y = self.location['sy'] + (1 if int(slope) > 1 else - 1)
-                if self.galaxy[self.location['qy']][self.location['qx']].CheckIsEmpty(self.location['sx'], new_y) == True:
-                    self.galaxy[self.location['qy']][self.location['qx']].SetObject('E', self.location['sx'], new_y)
-                    self.galaxy[self.location['qy']][self.location['qx']].SetObject('.', self.location['sx'], self.location['sy'])
-                    self.location['sy'] = new_y
-                else:
-                    self.EmergencyStop()
-                    break
-        return
-    
-    def EmergencyStop(self):
-        cost = random.randint(200, 350)
-        if self.energy > cost:
-            print(f"""**ALERT OBJECT DETECTED**\n**EMERGENCY STOP**\n\nEmergency stop costs {cost} energy.""")
-        else:
-            self.is_alive = False
-            self.GameOver()
-
-    def GameOver(self):
-        pass
-
-if __name__ == "__main__":
-    from Quadrant import Quadrant
-    quadrants = [[Quadrant() for i in range(10)] for j in range(10)]
-    test = Enterprise(quadrants)
-    test.damage['shields'] = True
-    test.ChangeShieldStatus()
-    test.repair_times['shields'] = 3.2
-    test.GetDamage()
-    test.SrScan()
-    test.Move()
-    test.SrScan()
-    print()
+            return True
