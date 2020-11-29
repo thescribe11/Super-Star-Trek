@@ -15,6 +15,6 @@ Besides being a Python 3.8 port (the Almy version is written in C), I have also 
 
 ## Running
 
-Executable: Double-click on "SuperStarTrek.exe".
+Source code: In your command line navigate to the source directory, and then enter ```python main.py```.
 
-Source code: In your command line navigate to the source directory, and then enter ```python main.py```
+I will add executables for Windows and Linux once I finish getting the game playable.
