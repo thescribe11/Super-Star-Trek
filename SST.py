@@ -1,32 +1,237 @@
 # stdlib imports
 import math
 import random
+import re
 from typing import Final
 
 # user-defined modules.
 from Enterprise import Enterprise
+import classes
+from classes import CommandKind
 import displays  # I should probably find a way to fold this into SST.py, but it's too much work.
 
-
-## The date of the Treaty of Algeron.
-## It forbids the Federation from using cloaking devices, so the Romulans
-## will get annoyed if they catch the Enterprise using the one it stole from them.
+# The date of the Treaty of Algeron.
+# It forbids the Federation from using cloaking devices, so the Romulans
+# will get annoyed if they catch the Enterprise using the one it stole from them.
 ALGERON: Final = 2311.0
 IDIDIT: bool = False  # Controls if the Romulans are antagonistic
 
-UPCOMING_EVENTS: dict = []
+UPCOMING_EVENTS = classes.Upcoming()
 
-## Controls whether debug features like print_debug() are active.
+# Controls whether debug features like print_debug() are active.
 DEBUG = True
 TESTING_MOVEMENT = True
 
-## Unfortunately, Python doesn't have a convenient way to make float ranges.
-## As a result, my only choices were (a) put it here, or (b) initialize it
-## every time I use it. The latter is inefficient, so I just decided to
-## make a global variable.
-POSSIBLE_DAMAGES = [i / 10 for i in range(50, 79)]
-
 ent = Enterprise()
+
+
+# Regular Expressions for use in parsing commands:
+NUMBER = re.compile(r'\d*[.]?\d*')
+WORD = re.compile(r'[a-zA-Z]+')
+
+
+def calcvector(direction):
+    # Work out the direction increment vector
+    # hinc = horizontal increment
+    # vinc = vertical increment
+    if 3 < direction < 7:
+        hinc = -1
+    elif direction < 3 or direction > 7:
+        hinc = 1
+    else:
+        hinc = 0
+    if 5 > direction > 1:
+        vinc = -1
+    elif direction > 5:
+        vinc = 1
+    else:
+        vinc = 0
+    return hinc, vinc
+
+
+def photons(self: Enterprise):
+    if self.torpedoes == 0:
+        print("[*ARMORY*] I'm afraid that we are out of torpedoes, sir.")
+        return
+
+    try:
+        fire_number = int(
+            input("[*ARMORY*] How many torpedoes would you like to fire?\n> ")
+        )
+    except ValueError:
+        print(
+            "\n[*ARMORY*] Sir, can you please speak more clearly? I cannot understand what you just said."
+        )
+        return
+    print(fire_number)
+    if 3 < fire_number < self.torpedoes:
+        print("\n[*ARMORY*] Captain, firing that many would melt the tubes!")
+        fire_anyway = input(
+            "\nWould you like to fire anyway? (Doing so will incur damage)\n> "
+        )
+        if (
+                fire_anyway == "Y"
+                or fire_anyway == "y"
+                or fire_anyway == "yes"
+                or fire_anyway == "Yes"
+        ):
+            launch_torps(self, fire_number)
+            for i in range(fire_number):
+                self.damage["Photon Torpedoes"] += random.choice([0.1, 0.2, 0.3])
+
+    elif fire_number > self.torpedoes:
+        print(
+            "\n[*ARMORY*] What do you think we are, the Bank of Ferenginar?! We don't HAVE that many torpedoes!"
+        )
+
+    else:
+        launch_torps(self, fire_number)
+    self.klingons_attack()  # The Klingons get a chance to fire back.
+
+
+def launch_torps(self: Enterprise, to_fire: int):
+    if to_fire > self.torpedoes:
+        print(
+            "[*ARMORY*] What do you think we are, the Bank of Ferenginar?! We don't even HAVE that many torepdoes!"
+        )
+        return
+
+    queue: list = []
+    for i in range(1, to_fire + 1):
+        x = input(f"Input the target direction for torpedo #{i}\n> ")
+        placeholder = x.split(" ")
+        # try:
+        queue.append(int(x))
+        '''except:   
+            print("[*ARMORY*] Sir, that command does not make sense.")
+            return
+        '''
+
+    current_torp = 0
+
+    for direction in queue:
+        current_torp += 1
+        print(f"\n* Torpedo #{current_torp}\nTorpedo track:")
+        if 1 <= direction <= 9:
+            # Work out the horizontal and vertical co-ordinates
+            # of the Enterprise in the current sector
+            # 0,0 is top left and 9,9 is bottom right
+            horiz = self.shoriz
+            vert = self.svert
+            # And calculate the direction to fire the torpedo
+            hinc, vinc = calcvector(direction)
+            # A torpedo only works in the current sector and stops moving
+            # when we hit something solid
+            out = False
+            while not out:
+                print(f"({vert + 1},{horiz + 1}) ", end="")
+                # Calculate the movement vector
+                vert = vert + vinc
+                horiz = horiz + hinc
+
+                # Is the torpedo still in the sector?
+                if vert < 0 or vert > 9 or horiz < 0 or horiz > 9:
+                    print("\nTorpedo missed.\n")
+                    break
+                elif self.sector[vert][horiz] != ".":
+                    out = True
+                # Have we hit an object?
+                if self.sector[vert][horiz] == "K":
+                    # Hit and destroyed a Klingon!
+                    out = True
+                    self.sector[vert][horiz] = "."
+                    for i in self.local_klingons_list:
+                        if i.y == vert and i.x == horiz:
+                            self.local_klingons_list.remove(i)
+                    self.galaxy[self.gvert][self.ghoriz][0] -= 1
+                    self.klingons -= 1
+                    print(f"\n***Klingon at sector ({vert}, {horiz}) destroyed.")
+                elif self.sector[vert][horiz] == "B":
+                    # Destroying a starbase ends the game.
+                    out = True
+                    self.sector[vert][horiz] = "."
+                    self.alive = False
+                    displays.type_slow(
+                        f"\n\n*** Starbase at ({vert}, {horiz}) destroyed. ***\n\nYou monster.\n"
+                    )
+                elif self.sector[vert][horiz] == "+":
+                    # Shooting a torpedo into a star has no effect... usually.
+                    out = True
+                    if random.randint(0, 7) < 7:
+                        print("\nTorpedo impacts star... no effect.")
+                    else:
+                        print("\nTorpedo impacts star... the star explodes.")
+                        self.galaxy[self.gvert][self.ghoriz][2] -= 1
+                        self.sector[vert][horiz] = "."
+                        for i in self.local_klingons_list:
+                            if [i.y, i.x] in [
+                                [vert - 1, horiz - 1],
+                                [vert - 1, horiz],
+                                [vert - 1, horiz + 1],
+                                [vert, horiz - 1],
+                                [vert, horiz],
+                                [vert, horiz + 1],
+                                [vert + 1, horiz - 1],
+                                [vert + 1, horiz],
+                                [vert + 1, horiz + 1],
+                            ]:
+                                print(
+                                    f"***Klingon at sector ({i.y}, {i.x}) destroyed in the explosion."
+                                )
+                                self.local_klingons_list.remove(i)
+                                self.galaxy[self.gvert][self.ghoriz][0] -= 1
+                                self.klingons -= 1
+                        if [self.svert, self.shoriz] in [
+                            [vert - 1, horiz - 1],
+                            [vert - 1, horiz],
+                            [vert - 1, horiz + 1],
+                            [vert, horiz - 1],
+                            [vert, horiz],
+                            [vert, horiz + 1],
+                            [vert + 1, horiz - 1],
+                            [vert + 1, horiz],
+                            [vert + 1, horiz + 1],
+                        ]:
+                            print(
+                                "\nThe Enterprise is caught in the shockwave",
+                                end="",
+                            )
+                            if self.shield_stat:
+                                damage_amount = random.randint(500, 700)
+                                if damage_amount < self.shields:
+                                    print(
+                                        ", dealing %i damage to the shields."
+                                        % damage_amount
+                                    )
+                                    self.shields -= damage_amount
+                                else:
+                                    print(
+                                        ". The blast overwhelms the shields, disabling the shield generator."
+                                    )
+                                    self.damage["Shields"] += random.randint(5, 30) / 10
+                                    self.add_collision_damage(1)
+                            else:
+                                print(", which causes massive damage.")
+                                self.add_collision_damage(3)
+
+            # One fewer torpedo
+            self.torpedoes -= 1
+
+
+def change_shields(self):
+    """
+    Add/subtract energy from the shields.
+    """
+
+    try:
+        amount = input(
+            "\n[*SHIELD CONTROL*] How much energy would you like to transfer? (negative values return energy to "
+            "main capacitors)\n> "
+        )
+    except ValueError:
+        print("[*SHIELD CONTROL*] Sir, that is not a valid amount.")
+
+    # TODO Add energy amount changing.
 
 
 def warp_move(self: Enterprise) -> bool:
@@ -86,7 +291,7 @@ def warp_move(self: Enterprise) -> bool:
                 if not -1 < i < 10:
                     print("[*COMPUTER*] *ERROR* COORDINATES INVALID.")
                     return False
-            ## dsvert = destination's vertical coord, dshoriz = destination's horizontal coord
+            # dsvert = destination's vertical coord, dshoriz = destination's horizontal coord
             dsvert = int(destination[0])
             dshoriz = int(destination[1])
             svert_diff = dsvert - self.svert
@@ -112,7 +317,7 @@ def warp_move(self: Enterprise) -> bool:
 
     else:
         deltas: list = input("Vertical and Horizontal displacements\n> ").split(" ")
-        ## Any way to get it down to one number conversion here would be welcome!
+        # Any way to get it down to one number conversion here would be welcome!
         svert_diff = int(float(deltas[0]) * 10)
         shoriz_diff = int(float(deltas[1]) * 10)
         if svert_diff != 0:
@@ -303,12 +508,34 @@ def impulse_move(self: Enterprise, unprocessed_slope, svert_diff, shoriz_diff):
     self.sector[self.svert][self.shoriz] = "E"
 
 
+def find_kind(token) -> classes.CommandKind:
+    try:
+        if token[0:2] == 'sh':
+            return CommandKind.Shield
+        elif token[0:2] == 'sr':
+            return CommandKind.Srscan
+        elif token[0:2] == 'lr':
+            return CommandKind.Lrscan
+    except IndexError:
+        return CommandKind.Error
+
+
+def process_command(raw: str) -> None:
+    tokens = raw.split(' ')
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        if re.fullmatch(WORD, token):
+            kind = find_kind(token)
+
+
 def main():
     global ent
-
     while ent.alive:
         print()
-        command = input("Command > ")
+        raw_commands = input("Command > ")
+        process_command(raw_commands)
+        command = UPCOMING_EVENTS.get()
         print()
         if command == "srs" or command == "srscan":
             if not ent.sector_current:
@@ -363,7 +590,7 @@ def main():
 
         elif command[0] == "p" or command[0] == "P":
             if ent.damage["Photon Torpedoes"] == 0:
-                ent.photons()
+                photons(ent)
             else:
                 print("[*ARMORY*] Sir, the launching systems are inoperable.")
 
@@ -420,7 +647,7 @@ def main():
                     print("[*SHIELD CONTROL*] Lowering shields.\n")
                     ent.shield_stat = False
                 elif subcommand == "3":
-                    ent.change_shields()
+                    change_shields(ent)
                 else:
                     print(
                         "[*SHIELD CONTROL*] Sir, that command does not make sense."
@@ -428,7 +655,7 @@ def main():
             ent.klingons_attack()
 
         elif command[0] == "m" or command[0] == "M":
-            if ent.warp_move():
+            if warp_move(ent):
                 ent.klingons_attack()
 
         elif command[0] == "c" or command[0] == "C":
@@ -455,9 +682,6 @@ def main():
 def print_debug(string) -> None:
     if DEBUG:
         print(string)
-
-
-
 
 
 if __name__ == "__main__":
