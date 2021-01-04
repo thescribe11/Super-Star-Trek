@@ -35,6 +35,7 @@ class CommandKind(enum.Enum):
     Score = 10
     ImprobGun = 11
     Chart = 12
+    Number = 13
 
 
 class Reason(enum.Enum):
@@ -80,6 +81,16 @@ class Movement:
 
 
 @dataclass()
+class SrScan:
+    pass
+
+
+@dataclass()
+class LrScan:
+    pass
+
+
+@dataclass()
 class Phasers:
     mode: Mode or None = None
     power: int or None = None
@@ -89,6 +100,11 @@ class Phasers:
 class KlingonsRespond:
     def __init__(self):
         pass
+
+
+@dataclass()
+class Decision:
+    which: str = 'n'
 
 
 @dataclass()
@@ -109,7 +125,16 @@ class Upcoming:
         Return the top element in the event stack
         """
         try:
-            return self._upcoming_input.pop()
+            return self._upcoming_input.pop(0)
+        except IndexError:
+            return None
+
+    def scan(self) -> str or None:
+        """
+        Return the top element in the event stack, without removing it
+        """
+        try:
+            return self._upcoming_input[0]
         except IndexError:
             return None
 
@@ -117,7 +142,6 @@ class Upcoming:
         """
         Add an element to the stack
         """
-        assert isinstance(incoming, str)
         self._upcoming_input.append(incoming)
 
     def clear(self):

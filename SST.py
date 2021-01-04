@@ -2,7 +2,7 @@
 import math
 import random
 import re
-from typing import Final
+from typing import Final, Union
 
 # user-defined modules.
 from Enterprise import Enterprise
@@ -14,7 +14,7 @@ import displays  # I should probably find a way to fold this into SST.py, but it
 # It forbids the Federation from using cloaking devices, so the Romulans
 # will get annoyed if they catch the Enterprise using the one it stole from them.
 ALGERON: Final = 2311.0
-IDIDIT: bool = False  # Controls if the Romulans are antagonistic
+HITME: bool = False  # Controls if the Romulans are antagonistic
 
 UPCOMING_EVENTS = classes.Upcoming()
 
@@ -54,27 +54,29 @@ def photons(self: Enterprise):
         print("[*ARMORY*] I'm afraid that we are out of torpedoes, sir.")
         return
 
-    try:
-        fire_number = int(
-            input("[*ARMORY*] How many torpedoes would you like to fire?\n> ")
-        )
-    except ValueError:
-        print(
-            "\n[*ARMORY*] Sir, can you please speak more clearly? I cannot understand what you just said."
-        )
-        return
+    if type(UPCOMING_EVENTS.scan()) != float:
+        try:
+            fire_number = int(
+                input("[*ARMORY*] How many torpedoes would you like to fire?\n> ")
+            )
+        except ValueError:
+            print(
+                "\n[*ARMORY*] Sir, can you please speak more clearly? I cannot understand what you just said."
+            )
+            return
+    else:
+        fire_number = int(UPCOMING_EVENTS.get())
     print(fire_number)
     if 3 < fire_number < self.torpedoes:
-        print("\n[*ARMORY*] Captain, firing that many would melt the tubes!")
-        fire_anyway = input(
-            "\nWould you like to fire anyway? (Doing so will incur damage)\n> "
-        )
-        if (
-                fire_anyway == "Y"
-                or fire_anyway == "y"
-                or fire_anyway == "yes"
-                or fire_anyway == "Yes"
-        ):
+        if type(UPCOMING_EVENTS.scan()) == classes.Decision:
+            fire_anyway = UPCOMING_EVENTS.get().which
+        else:
+            print("\n[*ARMORY*] Captain, firing that many would melt the tubes!")
+            fire_anyway = input(
+                "\nWould you like to fire anyway? (WARNING: Doing so will incur damage)\n> "
+            )
+
+        if fire_anyway.upper() in {'Y', 'YES'}:
             launch_torps(self, fire_number)
             for i in range(fire_number):
                 self.damage["Photon Torpedoes"] += random.choice([0.1, 0.2, 0.3])
@@ -86,7 +88,7 @@ def photons(self: Enterprise):
 
     else:
         launch_torps(self, fire_number)
-    self.klingons_attack()  # The Klingons get a chance to fire back.
+    UPCOMING_EVENTS.add(classes.KlingonsRespond)
 
 
 def launch_torps(self: Enterprise, to_fire: int):
@@ -99,13 +101,8 @@ def launch_torps(self: Enterprise, to_fire: int):
     queue: list = []
     for i in range(1, to_fire + 1):
         x = input(f"Input the target direction for torpedo #{i}\n> ")
-        placeholder = x.split(" ")
-        # try:
+        _placeholder = x.split(" ")
         queue.append(int(x))
-        '''except:   
-            print("[*ARMORY*] Sir, that command does not make sense.")
-            return
-        '''
 
     current_torp = 0
 
@@ -413,8 +410,8 @@ def impulse_move(self: Enterprise, unprocessed_slope, svert_diff, shoriz_diff):
                     new_ghoriz = old_ghoriz - 1
 
                 if not self.enter_quadrant(new_gvert, new_ghoriz):
-                    ## Unfortunately, the Enterprise wasn't able to leave the quadrant. As a result, get sector
-                    ## coordinates back within normal values.
+                    # Unfortunately, the Enterprise wasn't able to leave the quadrant. As a result, get sector
+                    # coordinates back within normal values.
                     print("*Enterprise failed to leave quadrant")
 
                     if leaving['north'] or leaving['south']:
@@ -424,7 +421,7 @@ def impulse_move(self: Enterprise, unprocessed_slope, svert_diff, shoriz_diff):
                         new_shoriz = old_shoriz
                     break
                 else:
-                    ## The Enterprise has left the quadrant, and is now going on its merry way.
+                    # The Enterprise has left the quadrant, and is now going on its merry way.
                     print("*Enterprise has left the quadrant")
 
                     if leaving['north']:
@@ -454,7 +451,7 @@ def impulse_move(self: Enterprise, unprocessed_slope, svert_diff, shoriz_diff):
             old_shoriz = new_shoriz
 
     else:
-        ## Horizontal movement
+        # Horizontal movement
 
         direction: int = 1 if shoriz_diff > 0 else -1
         leaving: dict = dict(east=False, west=False)
@@ -508,25 +505,64 @@ def impulse_move(self: Enterprise, unprocessed_slope, svert_diff, shoriz_diff):
     self.sector[self.svert][self.shoriz] = "E"
 
 
-def find_kind(token) -> classes.CommandKind:
+def find_kind(token) -> Union[classes.CommandKind, classes.Decision]:
     try:
-        if token[0:2] == 'sh':
+        if token.startswith('sh'):
             return CommandKind.Shield
-        elif token[0:2] == 'sr':
+        elif token.startswith('sr'):
             return CommandKind.Srscan
-        elif token[0:2] == 'lr':
+        elif token.startswith('lr'):
             return CommandKind.Lrscan
+        elif token.startswith('t'):
+            return CommandKind.Torpedo
+        elif token.startswith('p'):
+            return CommandKind.Phaser
+        elif token.startswith('m'):
+            return CommandKind.Move
+        elif token.startswith('r'):
+            return CommandKind.Rest
+        elif token == 'deathray':
+            return CommandKind.ImprobGun
+        elif token == 'destruct':
+            return CommandKind.SelfDestruct
+        elif token.startswith('d'):
+            return CommandKind.Damage
+        elif token.startswith('sc'):
+            return CommandKind.Score
+        elif token.startswith('c'):
+            return CommandKind.Chart
+        elif token.startswith('y'):
+            return classes.Decision('Y')
+        elif token.startswith('n'):
+            return classes.Decision('N')
+        else:
+            return CommandKind.Error
+
     except IndexError:
         return CommandKind.Error
 
 
+def raise_shields() -> None:
+    if ent.damage["Shields"] == 0:
+        print("[*SHIELD CONTROL*] Raising shields.\n")
+        ent.shield_stat = True
+    else:
+        print(
+            '[*SHIELD CONTROL*] The shield generator is fused, sir; I cannot change the settings '
+            'until it is repaired.\n '
+        )
+
+
 def process_command(raw: str) -> None:
-    tokens = raw.split(' ')
+    tokens = raw.lower().split(' ')
     index = 0
     while index < len(tokens):
         token = tokens[index]
         if re.fullmatch(WORD, token):
-            kind = find_kind(token)
+            UPCOMING_EVENTS.add(find_kind(token))
+        elif re.fullmatch(NUMBER, token):
+            UPCOMING_EVENTS.add(float(token))
+        index += 1
 
 
 def main():

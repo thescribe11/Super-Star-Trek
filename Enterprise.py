@@ -7,7 +7,7 @@ import random
 import math
 from helper_funcs import create_array
 
-DEBUG = False  # Determines whether or not some features are enabled.
+DEBUG = True  # Determines whether or not some features are enabled.
 
 POSSIBLE_DAMAGES = [i / 10 for i in range(50, 79)]
 
