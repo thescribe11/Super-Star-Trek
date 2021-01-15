@@ -31,9 +31,12 @@ WORD = re.compile(r'[a-zA-Z]+')
 
 
 def calcvector(direction):
-    # Work out the direction increment vector
-    # hinc = horizontal increment
-    # vinc = vertical increment
+    """
+    Work out torpedo direction increment vector
+    hinc = horizontal increment
+    vinc = vertical increment
+    """
+
     if 3 < direction < 7:
         hinc = -1
     elif direction < 3 or direction > 7:
@@ -50,11 +53,15 @@ def calcvector(direction):
 
 
 def photons(self: Enterprise):
+    """
+    This handles the validity checks before torpedoes are fired.
+    """
+
     if self.torpedoes == 0:
         print("[*ARMORY*] I'm afraid that we are out of torpedoes, sir.")
         return
 
-    if type(UPCOMING_EVENTS.scan()) != float:
+    if type(UPCOMING_EVENTS.scan) != float:
         try:
             fire_number = int(
                 input("[*ARMORY*] How many torpedoes would you like to fire?\n> ")
@@ -68,7 +75,7 @@ def photons(self: Enterprise):
         fire_number = int(UPCOMING_EVENTS.get())
     print(fire_number)
     if 3 < fire_number < self.torpedoes:
-        if type(UPCOMING_EVENTS.scan()) == classes.Decision:
+        if type(UPCOMING_EVENTS.scan) == classes.Decision:
             fire_anyway = UPCOMING_EVENTS.get().which
         else:
             print("\n[*ARMORY*] Captain, firing that many would melt the tubes!")
@@ -92,6 +99,10 @@ def photons(self: Enterprise):
 
 
 def launch_torps(self: Enterprise, to_fire: int):
+    """
+    Torpedoes away!
+    """
+
     if to_fire > self.torpedoes:
         print(
             "[*ARMORY*] What do you think we are, the Bank of Ferenginar?! We don't even HAVE that many torepdoes!"
@@ -215,30 +226,15 @@ def launch_torps(self: Enterprise, to_fire: int):
             self.torpedoes -= 1
 
 
-def change_shields(self):
-    """
-    Add/subtract energy from the shields.
-    """
-
-    try:
-        amount = input(
-            "\n[*SHIELD CONTROL*] How much energy would you like to transfer? (negative values return energy to "
-            "main capacitors)\n> "
-        )
-    except ValueError:
-        print("[*SHIELD CONTROL*] Sir, that is not a valid amount.")
-
-    # TODO Add energy amount changing.
-
-
 def warp_move(self: Enterprise) -> bool:
     """
-    Move within quadrant.
+    Wrapper for Enterprise movement.
+
     If True is returned, the Enterprise moved;
     otherwise, the maneuver was cancelled.
 
     Args:
-        self (Enterprise):
+        self (the Enterprise dataclass):
     """
 
     blooey = False
@@ -268,7 +264,7 @@ def warp_move(self: Enterprise) -> bool:
             print("[*Lt. SULU*] Sir? That doesn't make sense.")
             return False
     except IndexError:
-        print("[*Lt. SULU*] Aborting manuever.")
+        print("[*Lt. SULU*] Aborting maneuver.")
         return False
 
     if automatic:
@@ -334,16 +330,18 @@ def warp_move(self: Enterprise) -> bool:
 
     print_debug(f"{sslope=}")
 
-    impulse_move(self, sslope, svert_diff, shoriz_diff)
-    self.energy -= power
+    impulse_move(self, sslope, svert_diff, shoriz_diff)  # My de-linter keeps complaining that these are referenced
+    self.energy -= power                                 # before assignment. They're not.
     self.time_remaining -= trip_time
     return True
 
 
 def impulse_move(self: Enterprise, unprocessed_slope, svert_diff, shoriz_diff):
     """
-    Intra-quadrant movemement
+    Move the Enterprise.
+    I should change the function name, but that would probably leave me with a dependency hell.
     """
+
     if not DEBUG:
         self.sector[self.svert][self.shoriz] = "."
 
@@ -505,44 +503,11 @@ def impulse_move(self: Enterprise, unprocessed_slope, svert_diff, shoriz_diff):
     self.sector[self.svert][self.shoriz] = "E"
 
 
-def find_kind(token) -> Union[classes.CommandKind, classes.Decision]:
-    try:
-        if token.startswith('sh'):
-            return CommandKind.Shield
-        elif token.startswith('sr'):
-            return CommandKind.Srscan
-        elif token.startswith('lr'):
-            return CommandKind.Lrscan
-        elif token.startswith('t'):
-            return CommandKind.Torpedo
-        elif token.startswith('p'):
-            return CommandKind.Phaser
-        elif token.startswith('m'):
-            return CommandKind.Move
-        elif token.startswith('r'):
-            return CommandKind.Rest
-        elif token == 'deathray':
-            return CommandKind.ImprobGun
-        elif token == 'destruct':
-            return CommandKind.SelfDestruct
-        elif token.startswith('d'):
-            return CommandKind.Damage
-        elif token.startswith('sc'):
-            return CommandKind.Score
-        elif token.startswith('c'):
-            return CommandKind.Chart
-        elif token.startswith('y'):
-            return classes.Decision('Y')
-        elif token.startswith('n'):
-            return classes.Decision('N')
-        else:
-            return CommandKind.Error
-
-    except IndexError:
-        return CommandKind.Error
-
-
 def raise_shields() -> None:
+    """
+    Raise the deflector shields
+    """
+
     if ent.damage["Shields"] == 0:
         print("[*SHIELD CONTROL*] Raising shields.\n")
         ent.shield_stat = True
@@ -553,7 +518,76 @@ def raise_shields() -> None:
         )
 
 
+def lower_shields() -> None:
+    """
+    Lower the deflector shields.
+    """
+
+    if ent.damage['Shields'] == 0:
+        print('[*SHIELD CONTROL*] Lowering shields.\n')
+        ent.shield_stat = False
+    else:
+        print('[*SHIELD CONTROL*] Sir, the shield generator is damaged; I can\'t change the settings.')
+
+
+def change_shields(amount=None, /):
+    pass
+
+
+def find_kind(token) -> Union[classes.CommandKind, classes.Decision]:
+    """
+    We know we have some sort of command on our hands; which command is it?
+    """
+
+    try:
+        # This is when I wish Python had `match` statements.
+        if token.startswith('sh'):  # Generic shield-control command
+            return CommandKind.Shield
+        elif token.startswith('u') and UPCOMING_EVENTS.scan() is CommandKind.Shield:  # Raise shields
+            return CommandKind.ShieldUp
+        elif token.startswith('d') and UPCOMING_EVENTS.scan() is CommandKind.Shield:  # Lower shields
+            return CommandKind.ShieldDown
+        elif token.startswith('t') and UPCOMING_EVENTS.scan() is CommandKind.Shield:  # Transfer energy to/from shields
+            return CommandKind.ShieldAdjustment
+        elif token.startswith('sr'):  # Short-range sensor scan
+            return CommandKind.Srscan
+        elif token.startswith('lr'):  # Long-range sensor scan
+            return CommandKind.Lrscan
+        elif token.startswith('t'):  # Photon torpedo
+            return CommandKind.Torpedo
+        elif token.startswith('p'):  # Phasers
+            return CommandKind.Phaser
+        elif token.startswith('m'):  # Move under warp
+            return CommandKind.Move
+        elif token.startswith('r'):  # Waste time
+            return CommandKind.Rest
+        elif token == 'deathray':  # Fire Improbability Gun. The full command must be given.
+            return CommandKind.ImprobGun
+        elif token == 'destruct':  # Self-Destruct
+            return CommandKind.SelfDestruct
+        elif token.startswith('d'):  # Get a damage report
+            return CommandKind.Damage
+        elif token.startswith('sc'):  # Show score
+            return CommandKind.Score
+        elif token.startswith('c'):  # Show starchart
+            return CommandKind.Chart
+        elif token.startswith('y'):  # An affirmative response
+            return classes.Decision('Y')
+        elif token.startswith('n'):  # A negative response
+            return classes.Decision('N')
+
+        else:  # Something's wrong.
+            return CommandKind.Error
+
+    except IndexError:
+        return CommandKind.Error
+
+
 def process_command(raw: str) -> None:
+    """
+    Take input, tokenize it, and then parse it and add the result to UPCOMING_COMMANDS.
+    """
+
     tokens = raw.lower().split(' ')
     index = 0
     while index < len(tokens):
@@ -562,10 +596,16 @@ def process_command(raw: str) -> None:
             UPCOMING_EVENTS.add(find_kind(token))
         elif re.fullmatch(NUMBER, token):
             UPCOMING_EVENTS.add(float(token))
+        else:
+            raise TypeError("All input to process_command should be parseable! Something has gone very, very wrong.")
         index += 1
 
 
 def main():
+    """
+    Main event loop.
+    """
+
     global ent
     while ent.alive:
         print()
@@ -573,7 +613,8 @@ def main():
         process_command(raw_commands)
         command = UPCOMING_EVENTS.get()
         print()
-        if command == "srs" or command == "srscan":
+        if command is CommandKind.Srscan:
+            # This section is a bit of a quagmire, and I honestly don't know how it works.
             if not ent.sector_current:
                 (
                     ent.sector,
@@ -624,70 +665,43 @@ def main():
                     ent.time_remaining,
                 )
 
-        elif command[0] == "p" or command[0] == "P":
+        elif command is CommandKind.Torpedo:
             if ent.damage["Photon Torpedoes"] == 0:
                 photons(ent)
             else:
-                print("[*ARMORY*] Sir, the launching systems are inoperable.")
+                print('[*ARMORY*] Sir, the launching systems are inoperable.')
 
-        elif command[0] == "d" or command[0] == "D":
+        elif command is CommandKind.Damage:
             displays.print_damage(ent.damage)
 
-        elif (
-                command == "shields up"
-                or command == "s up"
-                or command == "s u"
-                or command == "shields u"
-        ):
-            if ent.damage["Shields"] == 0:
-                print("[*SHIELD CONTROL*] Raising shields.\n")
-                ent.shield_stat = True
-            else:
-                print(
-                    '[*SHIELD CONTROL*] The shield generator is fused, sir; I cannot change the settings '
-                    'until it is repaired.\n '
-                )
-            ent.klingons_attack()
-
-        elif (
-                command == "shields down"
-                or command == "s down"
-                or command == "s d"
-                or command == "shields d"
-        ):
-            if ent.damage["Shields"] == 0:
-                print("[*SHIELD CONTROL*] Lowering shields.\n")
-                ent.shield_stat = False
-            else:
-                print(
-                    "[*SHIELD CONTROL*] The shield generator is fused, sir; I cannot change the settings"
-                    " until it is repaired.\n "
-                )
-            ent.klingons_attack()
-
-        elif command[0] == "S" or command[0] == "s":
-            if ent.damage["Shields"] != 0:
-                print(
-                    "[*SHIELD CONTROL*] The shield generator is fused, sir; I cannot change the settings "
-                    "until it is repaired.\n "
-                )
-            else:
-                print("[*SHIELD CONTROL*] What do you want me to do?")
-                subcommand = input(
+        elif command is CommandKind.Shield:
+            subcommand = UPCOMING_EVENTS.scan()
+            if subcommand not in {CommandKind.ShieldUp, CommandKind.ShieldDown, CommandKind.ShieldAdjustment}:
+                # No arguments were supplied
+                print("[*SHIELD CONTROL*] Whaddya want?")  # Cue snarky ensign.
+                new_subcommand = input(
                     "(1 - raise shields, 2 - lower shields, 3 - add/subtract energy\n> "
                 )
-                if subcommand == "1":
-                    print("[*SHIELD CONTROL*] Raising shields.\n")
+                if new_subcommand == "1":
+                    print("[*SHIELD CONTROL*] Your wish is my command. Raising shields.\n")
                     ent.shield_stat = True
-                elif subcommand == "2":
-                    print("[*SHIELD CONTROL*] Lowering shields.\n")
+                elif new_subcommand == "2":
+                    print("[*SHIELD CONTROL*] [*Sighs*] If I must. Lowering shields.\n")
                     ent.shield_stat = False
-                elif subcommand == "3":
+                elif new_subcommand == "3":
                     change_shields(ent)
                 else:
                     print(
-                        "[*SHIELD CONTROL*] Sir, that command does not make sense."
+                        "[*SHIELD CONTROL*] Respectfully, Oh Most Gracious One, those orders are pure nonsense."
                     )
+            elif subcommand is CommandKind.ShieldUp:
+                ...
+            elif subcommand is CommandKind.ShieldDown:
+                ...
+            elif subcommand is CommandKind.ShieldAdjustment:
+                if not isinstance(UPCOMING_EVENTS.scan(), CommandKind):  # Any non-CommandKind must be an argument.
+                    change_shields(UPCOMING_EVENTS.get())  # Get argument value
+
             ent.klingons_attack()
 
         elif command[0] == "m" or command[0] == "M":

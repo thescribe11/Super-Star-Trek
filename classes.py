@@ -36,6 +36,9 @@ class CommandKind(enum.Enum):
     ImprobGun = 11
     Chart = 12
     Number = 13
+    ShieldUp = 14
+    ShieldDown = 15
+    ShieldAdjustment = 16
 
 
 class Reason(enum.Enum):
@@ -58,13 +61,6 @@ class Reason(enum.Enum):
 class Mode(enum.Enum):
     Manual = 1
     Auto = 2
-
-
-@dataclass()
-class Shields:
-    subtype: str or None = None
-    amount: float or None = None
-    new_status: bool or None = None
 
 
 @dataclass()
