@@ -508,7 +508,7 @@ def raise_shields() -> None:
     Raise the deflector shields
     """
 
-    if ent.damage["Shields"] == 0:
+    if not ent.damage["Shields"]:
         print("[*SHIELD CONTROL*] Raising shields.\n")
         ent.shield_stat = True
     else:
@@ -523,15 +523,54 @@ def lower_shields() -> None:
     Lower the deflector shields.
     """
 
-    if ent.damage['Shields'] == 0:
+    if not ent.damage['Shields']:
         print('[*SHIELD CONTROL*] Lowering shields.\n')
         ent.shield_stat = False
     else:
         print('[*SHIELD CONTROL*] Sir, the shield generator is damaged; I can\'t change the settings.')
 
 
-def change_shields(amount=None, /):
-    pass
+def change_shields(amount:float = None, /):
+    if not ent.damage['Shields']:
+        new_shield_amount: float = 0.0  # I'm defining this here so that my linter will stop yelling at me.
+
+        if amount is None:
+            try:
+                amount = float(
+                    input(
+                        "[*SHIELD CONTROL*] How much energy would you like to redirect to/from the shields?\n> "
+                    )
+                )
+            except ValueError:
+                print("[*SHIELD CONTROL*] Sir, have you been drinking again?")
+                return
+
+        if amount == 0:
+            return
+
+        elif amount > 0:
+            if ent.energy - amount > 0:
+                ent.energy -= amount
+                new_shield_amount = ent.shields + amount
+            else:  # Whoops! The user is trying to redirect too much energy.
+                print("[*ENGINEERING*] Sir, we don't have that much energy.")
+                return
+
+        elif amount < 0:
+            if ent.shields - amount > 0:
+                new_shield_amount = ent.shields - amount
+                ent.energy += amount
+            else:
+                print("[*SHIELD CONTROL*] Captain, we don't have that much energy in the capacitors.")
+                return
+
+        if new_shield_amount > 2500:  # The Enterprise's shield capacitors only have room for 2500 energy.
+            extra = new_shield_amount % 2500  # Ascertain the exact amount of excess.
+            print("[*SHIELD CONTROL*] The shield capacitors are full; redirecting extra energy back to Engineering.")
+            ent.energy += extra
+            new_shield_amount -= extra
+
+        ent.shields = new_shield_amount
 
 
 def find_kind(token) -> Union[classes.CommandKind, classes.Decision]:
@@ -695,14 +734,18 @@ def main():
                         "[*SHIELD CONTROL*] Respectfully, Oh Most Gracious One, those orders are pure nonsense."
                     )
             elif subcommand is CommandKind.ShieldUp:
-                ...
+                raise_shields()
             elif subcommand is CommandKind.ShieldDown:
-                ...
+                lower_shields()
             elif subcommand is CommandKind.ShieldAdjustment:
-                if not isinstance(UPCOMING_EVENTS.scan(), CommandKind):  # Any non-CommandKind must be an argument.
-                    change_shields(UPCOMING_EVENTS.get())  # Get argument value
-
-            ent.klingons_attack()
+                if type(UPCOMING_EVENTS.scan()) == float:  # Any non-CommandKind must be an argument.
+                    try:
+                        change_shields(UPCOMING_EVENTS.get())  # Get argument value
+                        ent.klingons_attack()
+                    except TypeError:
+                        print(
+                            "[*SHIELD CONTROL*] Respectfully, Oh Most Gracious One, those orders are pure nonsense."
+                        )
 
         elif command[0] == "m" or command[0] == "M":
             if warp_move(ent):
