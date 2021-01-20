@@ -24,7 +24,6 @@ TESTING_MOVEMENT = True
 
 ent = Enterprise()
 
-
 # Regular Expressions for use in parsing commands:
 NUMBER = re.compile(r'\d*[.]?\d*')
 WORD = re.compile(r'[a-zA-Z]+')
@@ -331,7 +330,7 @@ def warp_move(self: Enterprise) -> bool:
     print_debug(f"{sslope=}")
 
     impulse_move(self, sslope, svert_diff, shoriz_diff)  # My de-linter keeps complaining that these are referenced
-    self.energy -= power                                 # before assignment. They're not.
+    self.energy -= power  # before assignment. They're not.
     self.time_remaining -= trip_time
     return True
 
@@ -530,7 +529,13 @@ def lower_shields() -> None:
         print('[*SHIELD CONTROL*] Sir, the shield generator is damaged; I can\'t change the settings.')
 
 
-def change_shields(amount:float = None, /):
+def change_shields(amount: float = None, /):
+    """
+    Change the amount energy in the shields.
+    """
+
+    print(amount)
+
     if not ent.damage['Shields']:
         new_shield_amount: float = 0.0  # I'm defining this here so that my linter will stop yelling at me.
 
@@ -549,6 +554,7 @@ def change_shields(amount:float = None, /):
             return
 
         elif amount > 0:
+            print("Change is greater than 0.")
             if ent.energy - amount > 0:
                 ent.energy -= amount
                 new_shield_amount = ent.shields + amount
@@ -557,20 +563,26 @@ def change_shields(amount:float = None, /):
                 return
 
         elif amount < 0:
-            if ent.shields - amount > 0:
-                new_shield_amount = ent.shields - amount
-                ent.energy += amount
+            print("Change is less than 0.")
+            if ent.shields + amount > 0:
+                new_shield_amount = ent.shields + amount  # I figured out the problem in earlier versions; - a - is +.
+                ent.energy -= amount
             else:
                 print("[*SHIELD CONTROL*] Captain, we don't have that much energy in the capacitors.")
                 return
 
         if new_shield_amount > 2500:  # The Enterprise's shield capacitors only have room for 2500 energy.
             extra = new_shield_amount % 2500  # Ascertain the exact amount of excess.
-            print("[*SHIELD CONTROL*] The shield capacitors are full; redirecting extra energy back to Engineering.")
+            print(f"[*SHIELD CONTROL*] The shield capacitors are full; redirecting {extra} units excess energy back to "
+                  f"Engineering.")
             ent.energy += extra
             new_shield_amount -= extra
 
+        print(f"New amount: {new_shield_amount}")
         ent.shields = new_shield_amount
+
+    else:
+        print("[*SHIELD CONTROL*] Sir, the deflector shields are damaged; I can't change the settings.")
 
 
 def find_kind(token) -> Union[classes.CommandKind, classes.Decision]:
@@ -725,10 +737,10 @@ def main():
                     print("[*SHIELD CONTROL*] Your wish is my command. Raising shields.\n")
                     ent.shield_stat = True
                 elif new_subcommand == "2":
-                    print("[*SHIELD CONTROL*] [*Sighs*] If I must. Lowering shields.\n")
+                    print("[*SHIELD CONTROL*] *sighs* If I must. Lowering shields.\n")
                     ent.shield_stat = False
                 elif new_subcommand == "3":
-                    change_shields(ent)
+                    change_shields()
                 else:
                     print(
                         "[*SHIELD CONTROL*] Respectfully, Oh Most Gracious One, those orders are pure nonsense."
@@ -746,6 +758,8 @@ def main():
                         print(
                             "[*SHIELD CONTROL*] Respectfully, Oh Most Gracious One, those orders are pure nonsense."
                         )
+
+        # TODO: Finish integrating new commands from here on.
 
         elif command[0] == "m" or command[0] == "M":
             if warp_move(ent):
