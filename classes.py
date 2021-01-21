@@ -23,6 +23,7 @@ class Klingon(object):
 
 class CommandKind(enum.Enum):
     Error = -1
+    Quit = 0
     Shield = 1
     Srscan = 2
     Lrscan = 3
@@ -39,10 +40,16 @@ class CommandKind(enum.Enum):
     ShieldUp = 14
     ShieldDown = 15
     ShieldAdjustment = 16
+    Dock = 17
+    Help = 18
 
 
 class Reason(enum.Enum):
-    NegativeSpaceWedgie = -1  # Warning: Usage of the Improbability Cannon may result insanity-causing Alien Geometries
+    """
+    Specific reasons why the Enterprise was destroyed.
+    """
+
+    NegativeSpaceWedgie = -1  # Warning: Usage of the Improbability Cannon may result mind-destroying Alien Geometries
     Kaboom = 0  # The Enterprise has been blown up
     Tribble = 1  # The Enterprise is filled with Tribbles
     Stranded = 2  # You have been stranded on a planet.

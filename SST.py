@@ -3,6 +3,7 @@ import math
 import random
 import re
 from typing import Final, Union
+import sys
 
 # user-defined modules.
 from Enterprise import Enterprise
@@ -594,6 +595,8 @@ def find_kind(token) -> Union[classes.CommandKind, classes.Decision]:
         # This is when I wish Python had `match` statements.
         if token.startswith('sh'):  # Generic shield-control command
             return CommandKind.Shield
+        elif token == "quit":  # The player is quitting the game
+            return CommandKind.Quit
         elif token.startswith('u') and UPCOMING_EVENTS.scan() is CommandKind.Shield:  # Raise shields
             return CommandKind.ShieldUp
         elif token.startswith('d') and UPCOMING_EVENTS.scan() is CommandKind.Shield:  # Lower shields
@@ -631,7 +634,7 @@ def find_kind(token) -> Union[classes.CommandKind, classes.Decision]:
             return CommandKind.Error
 
     except IndexError:
-        return CommandKind.Error
+        raise UserWarning("find_kind() should not have any errors. This is an error, so something is wrong.")
 
 
 def process_command(raw: str) -> None:
@@ -648,6 +651,7 @@ def process_command(raw: str) -> None:
         elif re.fullmatch(NUMBER, token):
             UPCOMING_EVENTS.add(float(token))
         else:
+            print(token)
             raise TypeError("All input to process_command should be parseable! Something has gone very, very wrong.")
         index += 1
 
@@ -761,11 +765,11 @@ def main():
 
         # TODO: Finish integrating new commands from here on.
 
-        elif command[0] == "m" or command[0] == "M":
+        elif command is CommandKind.Move:
             if warp_move(ent):
                 ent.klingons_attack()
 
-        elif command[0] == "c" or command[0] == "C":
+        elif command is CommandKind.Chart:
             displays.print_starchart(
                 ent.galaxy,
                 ent.quadrants_visited,
@@ -774,7 +778,7 @@ def main():
                 (True if ent.damage["Long-Range Sensors"] > 0 else False),
             )
 
-        elif command in ("LRS", "LRSCAN", "lrs", "lrscan"):
+        elif command is CommandKind.Lrscan:
             displays.print_lrscan(
                 ent.galaxy,
                 ent.gvert,
@@ -782,8 +786,16 @@ def main():
                 (True if ent.damage["Long-Range Sensors"] > 0 else False),
             )
 
-        elif command in ("QUIT", "quit", "Quit"):
-            quit()
+        elif command is CommandKind.Quit:
+            print("Live long and prosper.\n")
+            sys.exit(0)
+
+        elif command is CommandKind.Help:
+            print("Here is a list of available commands:")
+            # TODO print out list of commands. Only implement this once everything else is finished.
+
+        elif command is CommandKind.Error:
+            print("That is not a command.\n\nType \"commands\" for a list of available commands.")
 
 
 def print_debug(string) -> None:

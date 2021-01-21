@@ -55,6 +55,7 @@ class Enterprise(object):
 
         self.sector = create_array(10, 10, value=".")
         self.quadrants_visited = create_array(10, 10, value=False)
+        self.sector_current = False
 
         self.damage = {
             "Shields": 0,
