@@ -42,6 +42,8 @@ class CommandKind(enum.Enum):
     ShieldAdjustment = 16
     Dock = 17
     Help = 18
+    Manual = 19  # CommandKind.Manual and CommandKind.Automatic are used for things like Phasers and movement.
+    Automatic = 20
 
 
 class Reason(enum.Enum):
@@ -152,3 +154,15 @@ class Upcoming:
         Remove all (or most, depending on whether or not I implement commanders) of the elements in self.upcoming_input
         """
         self._upcoming_input.clear()
+
+    def remaining_length(self):
+        return len(self._upcoming_input)
+
+    def type_get(self, elem_type):
+        """
+        .get() an item, but only if it is of type elem_type.
+        """
+        if type(self.scan()) is elem_type or self.scan() is elem_type:  # The type of an enum member the enum, so CommandKinds need a separate test.
+            return self.get()
+        else:
+            return None

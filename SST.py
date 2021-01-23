@@ -226,59 +226,68 @@ def launch_torps(self: Enterprise, to_fire: int):
             self.torpedoes -= 1
 
 
-def warp_move(self: Enterprise) -> bool:
+def warp_move(mode: Union[None, classes.Mode] = None, vdisp: Union[None, float] = None, hdisp: Union[None, float] = None, /) -> bool:
     """
     Wrapper for Enterprise movement.
 
     If True is returned, the Enterprise moved;
     otherwise, the maneuver was cancelled.
-
-    Args:
-        self (the Enterprise dataclass):
     """
+
+    print(f"{mode=} {vdisp=} {hdisp=}")
 
     blooey = False
     damaged = False
     trip_time: float = 0
     sdistance: float = 0
     sslope: float = 0
+    automatic: bool
 
-    if self.damage["Warp Drive"] > 5:
+    if ent.damage["Warp Drive"] > 5:
         print(
             "[*ENGINEERING*] Scotty here. The warp drive is badly damaged, sir; we'd better not use it until I "
             "can get this damage repaired. "
         )
         return False
-    elif 0 < self.damage["Impulse Drive"] < 5 and self.warp_speed > 4:
+    elif 0 < ent.damage["Impulse Drive"] < 5 and ent.warp_speed > 4:
         print(
             "[*ENGINEERING*] Sir, the impulse drive is damaged; I can only give you warp 4 until it is repaired."
         )
 
-    which = input("[*Lt. SULU*] Automatic or manual movement?\n> ")
-    try:
-        if which[0] == "a" or which[0] == "A":
-            automatic = True
-        elif which[0] == "m" or which[0] == "M":
-            automatic = False
-        else:
-            print("[*Lt. SULU*] Sir? That doesn't make sense.")
+    if mode is None:
+        which = input("[*Lt. SULU*] Automatic or manual movement?\n> ")
+        try:
+            if which[0] == "a" or which[0] == "A":
+                automatic = True
+            elif which[0] == "m" or which[0] == "M":
+                automatic = False
+            else:
+                print("[*Lt. SULU*] Sir? That doesn't make sense.")
+                return False
+        except IndexError:
+            print("[*Lt. SULU*] Aborting maneuver.")
             return False
-    except IndexError:
-        print("[*Lt. SULU*] Aborting maneuver.")
-        return False
+    elif mode is classes.Mode.Auto:
+        automatic = True
+    elif mode is classes.Mode.Manual:
+        automatic = False
 
     if automatic:
-        # noinspection PyPep8,PyPep8,PyPep8
-        try:
-            destination: list = [
-                int(i) - 1
-                for i in input("Please input destination coordinates\n> ").split(
-                    " "
-                )
-            ]
-        except:  # Yes, the bare except is on purpose.
-            print("[*COMPUTER*] *ERROR* COORDINATES INVALID.")
-            return False
+        if vdisp is None and hdisp is None:
+            # noinspection PyPep8,PyPep8,PyPep8
+            try:
+                destination: list = [
+                    int(i) - 1
+                    for i in input("Please input destination coordinates\n> ").split(
+                        " "
+                    )
+                ]
+            except:  # Yes, the bare except is on purpose.
+                print("[*COMPUTER*] *ERROR* COORDINATES INVALID.")
+                return False
+        else:
+            destination: list = [int(vdisp), int(hdisp)]
+
         if len(destination) == 2:
             for i in destination:
                 if not -1 < i < 10:
@@ -287,18 +296,18 @@ def warp_move(self: Enterprise) -> bool:
             # dsvert = destination's vertical coord, dshoriz = destination's horizontal coord
             dsvert = int(destination[0])
             dshoriz = int(destination[1])
-            svert_diff = dsvert - self.svert
-            shoriz_diff = dshoriz - self.shoriz
+            svert_diff = dsvert - ent.svert
+            shoriz_diff = dshoriz - ent.shoriz
             if svert_diff != 0:
-                sslope = (self.shoriz - dshoriz) / (self.svert - dsvert)
+                sslope = (ent.shoriz - dshoriz) / (ent.svert - dsvert)
                 sdistance = math.sqrt(svert_diff ** 2 + shoriz_diff ** 2)
             else:
                 sslope = math.inf
                 sdistance = shoriz_diff
 
             trip_time = 10 * sdistance / 5
-            power = (sdistance + 0.05) * 15 * (2 if self.shield_stat else 1)
-            if power >= self.energy:
+            power = (sdistance + 0.05) * 15 * (2 if ent.shield_stat else 1)
+            if power >= ent.energy:
                 print(
                     "[*ENGINEERING*] Scotty here. I'm sorry captain, but we canna' do it!\n[*ENGINEERING*] We "
                     "simply don't have enough power remaining. "
@@ -309,7 +318,10 @@ def warp_move(self: Enterprise) -> bool:
             print("[*COMPUTER*] *ERROR* COORDINATES INVALID.")
 
     else:
-        deltas: list = input("Vertical and Horizontal displacements\n> ").split(" ")
+        if vdisp is None and hdisp is None:
+            deltas: list = input("Vertical and Horizontal displacements\n> ").split(" ")
+        else:
+            deltas = [vdisp, hdisp]
         # Any way to get it down to one number conversion here would be welcome!
         svert_diff = int(float(deltas[0]) * 10)
         shoriz_diff = int(float(deltas[1]) * 10)
@@ -321,8 +333,8 @@ def warp_move(self: Enterprise) -> bool:
             sdistance = shoriz_diff
 
         trip_time = sdistance / 15
-        power = (sdistance + 0.05) * 15 * (2 if self.shield_stat else 1)
-        if power >= self.energy:
+        power = (sdistance + 0.05) * 15 * (2 if ent.shield_stat else 1)
+        if power >= ent.energy:
             print(
                 "[*ENGINEERING*] Scotty here. I'm sorry captain, but we canna' do it!\n[*ENGINEERING*] We simply "
                 "don't have enough power remaining. "
@@ -330,20 +342,20 @@ def warp_move(self: Enterprise) -> bool:
 
     print_debug(f"{sslope=}")
 
-    impulse_move(self, sslope, svert_diff, shoriz_diff)  # My de-linter keeps complaining that these are referenced
-    self.energy -= power  # before assignment. They're not.
-    self.time_remaining -= trip_time
+    impulse_move(sslope, svert_diff, shoriz_diff)  # My de-linter keeps complaining that these are referenced
+    ent.energy -= power  # before assignment. They're not.
+    ent.time_remaining -= trip_time
     return True
 
 
-def impulse_move(self: Enterprise, unprocessed_slope, svert_diff, shoriz_diff):
+def impulse_move(unprocessed_slope, svert_diff, shoriz_diff):
     """
     Move the Enterprise.
     I should change the function name, but that would probably leave me with a dependency hell.
     """
 
     if not DEBUG:
-        self.sector[self.svert][self.shoriz] = "."
+        ent.sector[ent.svert][ent.shoriz] = "."
 
     # In other words, +slope if the Enterprise is moving vertically, otherwise -slope.
     slope = (unprocessed_slope * (1 if svert_diff > 0 else -1))
@@ -354,10 +366,10 @@ def impulse_move(self: Enterprise, unprocessed_slope, svert_diff, shoriz_diff):
 
     direction = 1 if svert_diff > 0 else -1
 
-    old_svert: int = self.svert
-    old_shoriz: int = self.shoriz
-    old_gvert: int = self.gvert
-    old_ghoriz: int = self.ghoriz
+    old_svert: int = ent.svert
+    old_shoriz: int = ent.shoriz
+    old_gvert: int = ent.gvert
+    old_ghoriz: int = ent.ghoriz
 
     new_svert: int
     new_shoriz: int
@@ -407,7 +419,7 @@ def impulse_move(self: Enterprise, unprocessed_slope, svert_diff, shoriz_diff):
                 if leaving['west']:
                     new_ghoriz = old_ghoriz - 1
 
-                if not self.enter_quadrant(new_gvert, new_ghoriz):
+                if not ent.enter_quadrant(new_gvert, new_ghoriz):
                     # Unfortunately, the Enterprise wasn't able to leave the quadrant. As a result, get sector
                     # coordinates back within normal values.
                     print("*Enterprise failed to leave quadrant")
@@ -432,15 +444,15 @@ def impulse_move(self: Enterprise, unprocessed_slope, svert_diff, shoriz_diff):
                     elif leaving['east']:
                         new_shoriz = new_shoriz - 10
 
-                    self.gvert = new_gvert
-                    self.ghoriz = new_ghoriz
+                    ent.gvert = new_gvert
+                    ent.ghoriz = new_ghoriz
                     old_gvert = new_gvert
                     old_ghoriz = new_ghoriz
 
                     reset_leaving()
 
             else:
-                x = self.check_movement_collision(new_svert, new_shoriz, old_shoriz)
+                x = ent.check_movement_collision(new_svert, new_shoriz, old_shoriz)
                 print(f"{x=}")
                 if x[0]:
                     old_shoriz = x[1]
@@ -453,7 +465,7 @@ def impulse_move(self: Enterprise, unprocessed_slope, svert_diff, shoriz_diff):
 
         direction: int = 1 if shoriz_diff > 0 else -1
         leaving: dict = dict(east=False, west=False)
-        new_ghoriz: int = self.ghoriz
+        new_ghoriz: int = ent.ghoriz
         killer: bool = False
 
         for i in range(abs(shoriz_diff)):
@@ -471,7 +483,7 @@ def impulse_move(self: Enterprise, unprocessed_slope, svert_diff, shoriz_diff):
                 new_ghoriz = old_ghoriz - 1
 
             if True in leaving.values():
-                if not self.enter_quadrant(self.ghoriz, new_ghoriz):
+                if not ent.enter_quadrant(ent.ghoriz, new_ghoriz):
                     new_svert = old_svert
                     killer = True
                     print("**Enterprise failed to leave the quadrant!")
@@ -484,10 +496,10 @@ def impulse_move(self: Enterprise, unprocessed_slope, svert_diff, shoriz_diff):
                         new_shoriz = 9
                     reset_leaving()
 
-                    self.ghoriz = new_ghoriz
+                    ent.ghoriz = new_ghoriz
                     old_ghoriz = new_ghoriz
             else:
-                x = self.check_h_movement_collision(new_shoriz, old_shoriz)
+                x = ent.check_h_movement_collision(new_shoriz, old_shoriz)
                 if x[0]:
                     print(f"{x[1]=}")
                     old_shoriz = x[1]
@@ -498,9 +510,9 @@ def impulse_move(self: Enterprise, unprocessed_slope, svert_diff, shoriz_diff):
                 break
             old_shoriz = new_shoriz
 
-    self.svert = old_svert
-    self.shoriz = round(old_shoriz)
-    self.sector[self.svert][self.shoriz] = "E"
+    ent.svert = old_svert
+    ent.shoriz = round(old_shoriz)
+    ent.sector[ent.svert][ent.shoriz] = "E"
 
 
 def raise_shields() -> None:
@@ -605,6 +617,10 @@ def find_kind(token) -> Union[classes.CommandKind, classes.Decision]:
             return CommandKind.ShieldAdjustment
         elif token.startswith('sr'):  # Short-range sensor scan
             return CommandKind.Srscan
+        elif token.startswith('m') and UPCOMING_EVENTS.scan() in {CommandKind.Move, CommandKind.Phaser}:
+            return CommandKind.Manual
+        elif token.startswith('a') and UPCOMING_EVENTS.scan() in {CommandKind.Move, CommandKind.Phaser}:
+            return CommandKind.Automatic
         elif token.startswith('lr'):  # Long-range sensor scan
             return CommandKind.Lrscan
         elif token.startswith('t'):  # Photon torpedo
@@ -666,136 +682,175 @@ def main():
         print()
         raw_commands = input("Command > ")
         process_command(raw_commands)
-        command = UPCOMING_EVENTS.get()
-        print()
-        if command is CommandKind.Srscan:
-            # This section is a bit of a quagmire, and I honestly don't know how it works.
-            if not ent.sector_current:
-                (
-                    ent.sector,
-                    ent.local_klingons_list,
-                    ent.panic,
-                ) = displays.enter_quadrant(
-                    ent.galaxy[ent.gvert][ent.ghoriz],
-                    ent.ghoriz,
-                    ent.gvert,
-                    ent.svert,
-                    ent.shoriz,
-                    ent.energy,
-                )  # This is the closest I could get to being PEP8-compliant.
-                ent.sector_current = True
-            if ent.damage["Short-Range Sensors"] == 0:
-                displays.print_srscan(
-                    ent.sector,
-                    [[ent.ghoriz, ent.gvert], [ent.shoriz, ent.svert]],
-                    ent.panic,
-                    ent.torpedoes,
-                    ent.energy,
-                    ent.klingons,
-                    ent.shields,
-                    ent.shield_stat,
-                    ent.warp_speed,
-                    ("ACTIVE" if ent.damage["Life Support"] == 0 else "DAMAGED"),
-                    ent.environment_reserves,
-                    ent.date,
-                    ent.time_remaining,
-                )
-            else:
-                displays.print_d_srscan(
-                    ent.sector,
-                    ent.gvert,
-                    ent.gvert,
-                    ent.shoriz,
-                    ent.svert,
-                    ent.panic,
-                    ent.torpedoes,
-                    ent.energy,
-                    ent.klingons,
-                    ent.shields,
-                    ent.shield_stat,
-                    ent.warp_speed,
-                    ("ACTIVE" if ent.damage["Life Support"] == 0 else "DAMAGED"),
-                    ent.environment_reserves,
-                    ent.date,
-                    ent.time_remaining,
-                )
 
-        elif command is CommandKind.Torpedo:
-            if ent.damage["Photon Torpedoes"] == 0:
-                photons(ent)
-            else:
-                print('[*ARMORY*] Sir, the launching systems are inoperable.')
-
-        elif command is CommandKind.Damage:
-            displays.print_damage(ent.damage)
-
-        elif command is CommandKind.Shield:
-            subcommand = UPCOMING_EVENTS.scan()
-            if subcommand not in {CommandKind.ShieldUp, CommandKind.ShieldDown, CommandKind.ShieldAdjustment}:
-                # No arguments were supplied
-                print("[*SHIELD CONTROL*] Whaddya want?")  # Cue snarky ensign.
-                new_subcommand = input(
-                    "(1 - raise shields, 2 - lower shields, 3 - add/subtract energy\n> "
-                )
-                if new_subcommand == "1":
-                    print("[*SHIELD CONTROL*] Your wish is my command. Raising shields.\n")
-                    ent.shield_stat = True
-                elif new_subcommand == "2":
-                    print("[*SHIELD CONTROL*] *sighs* If I must. Lowering shields.\n")
-                    ent.shield_stat = False
-                elif new_subcommand == "3":
-                    change_shields()
-                else:
-                    print(
-                        "[*SHIELD CONTROL*] Respectfully, Oh Most Gracious One, those orders are pure nonsense."
+        for i in range(UPCOMING_EVENTS.remaining_length()):
+            command = UPCOMING_EVENTS.get()
+            print()
+            if command is CommandKind.Srscan:
+                # This section is a bit of a quagmire, and I honestly don't know how it works.
+                if not ent.sector_current:
+                    (
+                        ent.sector,
+                        ent.local_klingons_list,
+                        ent.panic,
+                    ) = displays.enter_quadrant(
+                        ent.galaxy[ent.gvert][ent.ghoriz],
+                        ent.ghoriz,
+                        ent.gvert,
+                        ent.svert,
+                        ent.shoriz,
+                        ent.energy,
+                    )  # This is the closest I could get to being PEP8-compliant.
+                    ent.sector_current = True
+                if ent.damage["Short-Range Sensors"] == 0:
+                    displays.print_srscan(
+                        ent.sector,
+                        [ent.ghoriz, ent.gvert, ent.shoriz, ent.svert],
+                        ent.panic,
+                        ent.torpedoes,
+                        ent.energy,
+                        ent.klingons,
+                        ent.shields,
+                        ent.shield_stat,
+                        ent.warp_speed,
+                        ("ACTIVE" if ent.damage["Life Support"] == 0 else "DAMAGED"),
+                        ent.environment_reserves,
+                        ent.date,
+                        ent.time_remaining,
                     )
-            elif subcommand is CommandKind.ShieldUp:
-                raise_shields()
-            elif subcommand is CommandKind.ShieldDown:
-                lower_shields()
-            elif subcommand is CommandKind.ShieldAdjustment:
-                if type(UPCOMING_EVENTS.scan()) == float:  # Any non-CommandKind must be an argument.
-                    try:
-                        change_shields(UPCOMING_EVENTS.get())  # Get argument value
-                        ent.klingons_attack()
-                    except TypeError:
+                else:
+                    displays.print_d_srscan(
+                        ent.sector,
+                        ent.gvert,
+                        ent.gvert,
+                        ent.shoriz,
+                        ent.svert,
+                        ent.panic,
+                        ent.torpedoes,
+                        ent.energy,
+                        ent.klingons,
+                        ent.shields,
+                        ent.shield_stat,
+                        ent.warp_speed,
+                        ("ACTIVE" if ent.damage["Life Support"] == 0 else "DAMAGED"),
+                        ent.environment_reserves,
+                        ent.date,
+                        ent.time_remaining,
+                    )
+
+            elif command is CommandKind.Torpedo:
+                if ent.damage["Photon Torpedoes"] == 0:
+                    photons(ent)
+                else:
+                    print('[*ARMORY*] Sir, the launching systems are inoperable.')
+
+            elif command is CommandKind.Damage:
+                displays.print_damage(ent.damage)
+
+            elif command is CommandKind.Shield:
+                subcommand = UPCOMING_EVENTS.scan()
+                if subcommand not in {CommandKind.ShieldUp, CommandKind.ShieldDown, CommandKind.ShieldAdjustment}:
+                    # No arguments were supplied
+                    print("[*SHIELD CONTROL*] Whaddya want?")  # Cue snarky ensign.
+                    new_subcommand = input(
+                        "(1 - raise shields, 2 - lower shields, 3 - add/subtract energy\n> "
+                    )
+                    if new_subcommand == "1":
+                        print("[*SHIELD CONTROL*] Your wish is my command. Raising shields.\n")
+                        ent.shield_stat = True
+                    elif new_subcommand == "2":
+                        print("[*SHIELD CONTROL*] *sighs* If I must. Lowering shields.\n")
+                        ent.shield_stat = False
+                    elif new_subcommand == "3":
+                        change_shields()
+                    else:
                         print(
                             "[*SHIELD CONTROL*] Respectfully, Oh Most Gracious One, those orders are pure nonsense."
                         )
+                elif subcommand is CommandKind.ShieldUp:
+                    raise_shields()
+                elif subcommand is CommandKind.ShieldDown:
+                    lower_shields()
+                elif subcommand is CommandKind.ShieldAdjustment:
+                    if type(UPCOMING_EVENTS.scan()) == float:  # Any non-CommandKind must be an argument.
+                        try:
+                            change_shields(UPCOMING_EVENTS.get())  # Get argument value
+                            ent.klingons_attack()
+                        except TypeError:
+                            print(
+                                "[*SHIELD CONTROL*] Respectfully, Oh Most Gracious One, those orders are pure nonsense."
+                            )
 
-        # TODO: Finish integrating new commands from here on.
+            # TODO: Finish integrating new commands from here on.
 
-        elif command is CommandKind.Move:
-            if warp_move(ent):
-                ent.klingons_attack()
+            elif command is CommandKind.Move:
+                input_type: Union[None, classes.Mode]
+                dx, dy = (None, None)
+                boldly_going = True
 
-        elif command is CommandKind.Chart:
-            displays.print_starchart(
-                ent.galaxy,
-                ent.quadrants_visited,
-                ent.gvert,
-                ent.ghoriz,
-                (True if ent.damage["Long-Range Sensors"] > 0 else False),
-            )
+                if (subcommand := UPCOMING_EVENTS.scan()) is CommandKind.Automatic:
+                    input_type = classes.Mode.Auto
+                    print("Automatic")
+                    UPCOMING_EVENTS.get()
 
-        elif command is CommandKind.Lrscan:
-            displays.print_lrscan(
-                ent.galaxy,
-                ent.gvert,
-                ent.ghoriz,
-                (True if ent.damage["Long-Range Sensors"] > 0 else False),
-            )
+                    print(type(UPCOMING_EVENTS.scan()))
+                    if type(UPCOMING_EVENTS.scan()) is float:
+                        dx = UPCOMING_EVENTS.get()
+                        if type(UPCOMING_EVENTS.scan()) is float:
+                            dy = UPCOMING_EVENTS.get()
+                    else:
+                        print("[*Lt. SULU*] Sir, that especially doesn't make sense.")
+                        boldly_going = False
+                elif subcommand is CommandKind.Manual:
+                    input_type = classes.Mode.Manual
+                    UPCOMING_EVENTS.get()
+                    
 
-        elif command is CommandKind.Quit:
-            print("Live long and prosper.\n")
-            sys.exit(0)
+                elif type(subcommand) is float:
+                    dx = UPCOMING_EVENTS.get()
+                    if type(UPCOMING_EVENTS.scan()) is float:
+                        dy = UPCOMING_EVENTS.get()
+                        print("Assuming manual movement.")
+                        input_type = classes.Mode.Manual
+                    else:
+                        print("[*Lt. SULU*] Sir, that really doesn't make sense.")
+                        boldly_going = False
+                else:
+                    input_type = None
 
-        elif command is CommandKind.Help:
-            print("Here is a list of available commands:")
-            # TODO print out list of commands. Only implement this once everything else is finished.
+                if boldly_going:
+                    warp_move(input_type, dx, dy)
 
-        elif command is CommandKind.Error:
-            print("That is not a command.\n\nType \"commands\" for a list of available commands.")
+            elif command is CommandKind.Chart:
+                displays.print_starchart(
+                    ent.galaxy,
+                    ent.quadrants_visited,
+                    ent.gvert,
+                    ent.ghoriz,
+                    (True if ent.damage["Long-Range Sensors"] > 0 else False),
+                )
+
+            elif command is CommandKind.Lrscan:
+                displays.print_lrscan(
+                    ent.galaxy,
+                    ent.gvert,
+                    ent.ghoriz,
+                    (True if ent.damage["Long-Range Sensors"] > 0 else False),
+                )
+
+            elif command is CommandKind.Quit:
+                print("Live long and prosper.\n")
+                sys.exit(0)
+
+            elif command is CommandKind.Help:
+                print("Here is a list of available commands:")
+                # TODO print out list of commands. Only implement this once everything else is finished.
+
+            elif command is CommandKind.Error:
+                print("That is not a command.\n\nType \"commands\" for a list of available commands.")
+
+            else:
+                print(command)
 
 
 def print_debug(string) -> None:

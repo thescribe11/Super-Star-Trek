@@ -121,8 +121,6 @@ def print_damage(damage):
 
 """
 Damage to the short-range sensors severely reduces their range.
-Sorry about the weird formatting for the initial def statement; Black doesn't lots of comma-seperated values within a 
-parenthesis.
 """
 
 
@@ -160,11 +158,11 @@ def print_d_srscan(
         stdout.write(" ┃   ")
 
         if vert == 0:
-            print(f"Sector {svert + 1},{shoriz + 1} of quadrant {gvert + 1},{ghoriz + 1}")
+            print(f"Stardate:     {date}")
         elif vert == 1:
             print(f"Condition:    {alert}")
         elif vert == 2:
-            print(f"Torpedoes:    {torps}")
+            print(f"Position:     Sector {svert + 1},{shoriz + 1} of quadrant {gvert + 1},{ghoriz + 1}")
         elif vert == 3:
             print(f"Life Support: {e_condition}", end="")
             if e_condition == "ACTIVE":
@@ -172,17 +170,17 @@ def print_d_srscan(
             else:
                 print(f", {e_reserves}% remaining.")
         elif vert == 4:
-            print("Energy:       %.1f" % energy)
+            print(f"Warp factor:   {speed}")
         elif vert == 5:
+            print("Energy:       %.1f" % energy)
+        elif vert == 6:
+            print(f"Torpedoes:    {torps}")
+        elif vert == 7:
             print(
                 f"Shields:      {('UP' if shield_stat == True else 'DOWN')}, {shields} energy remaining"
             )
-        elif vert == 6:
-            print(f"Warp speed:   {speed}")
-        elif vert == 7:
-            print(f"Klingons:     {klingons}")
         elif vert == 8:
-            print(f"Stardate:     {date}")
+            print(f"Klingons:     {klingons}")
         elif vert == 9:
             print(f"Time left:    {time_remaining}")
         else:
@@ -220,13 +218,11 @@ def print_srscan(
             stdout.write(f" {sector[vert][horiz]}")
         stdout.write(" ┃   ")
         if vert == 0:
-            print(
-                f"Sector {position[1][1] + 1},{position[1][0] + 1} of quadrant {position[0][1] + 1},{position[0][0] + 1}"
-            )
+            print(f"Stardate:     {date}")
         elif vert == 1:
             print(f"Condition:    {alert}")
         elif vert == 2:
-            print(f"Torpedoes:    {torps}")
+            print(f"Position:     Sector {position[2] + 1},{position[3] + 1} of quadrant {position[0] + 1},{position[1] + 1}")
         elif vert == 3:
             print(f"Life Support: {e_condition}", end="")
             if e_condition == "ACTIVE":
@@ -234,19 +230,19 @@ def print_srscan(
             else:
                 print(f", {e_reserves}% remaining.")
         elif vert == 4:
-            print(f"Energy:       %.1f" % energy)
+            print(f"Warp factor:   {speed}")
         elif vert == 5:
+            print("Energy:       %.1f" % energy)
+        elif vert == 6:
+            print(f"Torpedoes:    {torps}")
+        elif vert == 7:
             print(
                 f"Shields:      {('UP' if shield_stat == True else 'DOWN')}, {shields} energy remaining"
             )
-        elif vert == 6:
-            print(f"Warp speed:   {speed}")
-        elif vert == 7:
-            print(f"Klingons:     {klingons}")
         elif vert == 8:
-            print(f"Stardate:     {date}")
+            print(f"Klingons:     {klingons}")
         elif vert == 9:
-            print(f"Time left:    {time_remaining}")
+            print(f"Time left:    {float(time_remaining)}")
         else:
             print("")
     print("  ┗━━━━━━━━━━━━━━━━━━━━━┛")
