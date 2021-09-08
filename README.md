@@ -1,4 +1,4 @@
-**Note: Due to rampant spaghetti coding, I've basically abandoned this project. Instead, I'm making a Rust port.**
+**Note: Due to rampant spaghetti coding and a lack of a good test API, I've basically abandoned this project**
 
 # Super Star Trek
 
