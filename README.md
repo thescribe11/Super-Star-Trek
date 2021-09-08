@@ -1,3 +1,5 @@
+**Note: Due to rampant spaghetti coding, I've basically abandoned this project. Instead, I'm making a Rust port.**
+
 # Super Star Trek
 
 This project is currently under development; it is not yet at a playable state.  
